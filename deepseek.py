@@ -1,13 +1,13 @@
 from telebot.formatting import mcite # type: ignore
 from query import Query
-from formatters import ChainedFormatter, ReplyFormatter
+from formatters import ChainedPartitionFormatter, ReplyFormatter
 import config
 import texts
 import json
 import re
 
 class DeepSeekQuery(Query):
-    class DeepSeekThinkFormatter(ChainedFormatter):
+    class DeepSeekThinkFormatter(ChainedPartitionFormatter):
         def __init__(self):
             super().__init__(ReplyFormatter(), ["<think>"], ["</think>"])
             self.deepseek_thinking_first = True

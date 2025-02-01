@@ -1,10 +1,10 @@
 import pytest
 
-from formatters import CustomFormatter, ChainedFormatter, ReplyFormatter
+from formatters import PartitionFormatter, ChainedPartitionFormatter, ReplyFormatter
 from deepseek import DeepSeekQuery
 import texts
 
-class SimpleFormatter(CustomFormatter):
+class SimpleFormatter(PartitionFormatter):
     def __init__(self):
         super().__init__(["<"], [">"])
     def in_format(self, s: str, advance_head: bool) -> str:
@@ -34,10 +34,10 @@ def test_simple_formatter_not_advancing():
                          == "...FORMATTING CONTINUES> BUT ENDS HERE"
     
 def test_chained_formatter():
-    class CustomChainedFormatter(ChainedFormatter):
+    class CustomChainedPartitionFormatter(ChainedPartitionFormatter):
         def in_format(self, s: str) -> str:
             return "~" + s + "~"
-    chained_formatter = CustomChainedFormatter(formatter, ["["], ["]"])
+    chained_formatter = CustomChainedPartitionFormatter(formatter, ["["], ["]"])
 
     assert chained_formatter.format("testing <formatting>", advance_head=True) \
                                  == "TESTING |formatting|"

@@ -3,7 +3,7 @@ from telebot import formatting
 from parsing import Formatter, format
 
 
-class CustomFormatter(Formatter):
+class PartitionFormatter(Formatter):
     def __init__(self, begin_delimiters: list[str], end_delimiters: list[str]):
         self.currently_inside = False
         self.begin_delimiters = begin_delimiters
@@ -26,8 +26,8 @@ class CustomFormatter(Formatter):
         return formatted
 
 
-class ChainedFormatter(Formatter):
-    class InnerFormatter(CustomFormatter):
+class ChainedPartitionFormatter(Formatter):
+    class InnerFormatter(PartitionFormatter):
         def __init__(self, begin_delimiters: list[str], end_delimiters: list[str], outer, next: Formatter):
             super().__init__(begin_delimiters, end_delimiters)
             self.next = next
@@ -42,7 +42,7 @@ class ChainedFormatter(Formatter):
             return self.next.format(self.outer.out_format(s), advance_head)
 
     def __init__(self, next: Formatter, begin_delimiters: list[str], end_delimiters: list[str]):
-        self.inner = ChainedFormatter.InnerFormatter(begin_delimiters, end_delimiters, self, next)
+        self.inner = ChainedPartitionFormatter.InnerFormatter(begin_delimiters, end_delimiters, self, next)
         self.next = next
         self.reset()
 
@@ -97,7 +97,7 @@ class CompoundFormatter(Formatter):
 base_formatter = CompoundFormatter(escape_formatter)
 
 
-class BoldFormatter(ChainedFormatter):
+class BoldFormatter(ChainedPartitionFormatter):
     def __init__(self):
         super().__init__(base_formatter, ["**"], ["**"])
 
@@ -107,7 +107,7 @@ class BoldFormatter(ChainedFormatter):
 bold_formatter = BoldFormatter()
 
 
-class CodeFormatter(ChainedFormatter):
+class CodeFormatter(ChainedPartitionFormatter):
     def __init__(self):
         super().__init__(bold_formatter, ["```python", "```C", "```cpp", "```c++", "```c#",
                                           "```csharp", "```java", "```bash", "```javascript",
