@@ -1,42 +1,34 @@
-class SkipToNext(Exception):
-    pass
-
-def format(str: str, begin_delimiters: list[str], end_delimiters: list[str],
+def format(s: str, begin_delimiter: str, end_delimiter: str,
            inside_formatter, outside_formatter, currently_inside: bool, advance_head: bool) -> tuple[str, bool]:
-    if not str or not str.strip():
-        return str, currently_inside
+    if not s or not s.strip():
+        return s, currently_inside
     result = ""
     inside = currently_inside
     inside_part = ""
     outside_part = ""
     skip_next_n = 0
-    for i in range(0, len(str)):
+    for i in range(0, len(s)):
         if skip_next_n > 0:
             skip_next_n -= 1
             continue
-        try:
-            for begin_delimiter in begin_delimiters:
-                if str[i:i+len(begin_delimiter)] == begin_delimiter:
-                    if not inside:
-                        result += outside_formatter(outside_part, advance_head)
-                        outside_part = ""
-                        inside = True
-                        skip_next_n = len(begin_delimiter)-1
-                        raise SkipToNext
-            for end_delimiter in end_delimiters:
-                if str[i:i+len(end_delimiter)] == end_delimiter:
-                    if inside:
-                        result += inside_formatter(inside_part, advance_head)
-                        inside_part = ""
-                        inside = False
-                        skip_next_n = len(end_delimiter)-1
-                        raise SkipToNext
+        if s[i:i + len(begin_delimiter)] == begin_delimiter:
+            if not inside:
+                result += outside_formatter(outside_part, advance_head)
+                outside_part = ""
+                inside = True
+                skip_next_n = len(begin_delimiter)-1
+                continue
+        if s[i:i + len(end_delimiter)] == end_delimiter:
             if inside:
-                inside_part += str[i]
-            else:
-                outside_part += str[i]
-        except SkipToNext:
-            continue
+                result += inside_formatter(inside_part, advance_head)
+                inside_part = ""
+                inside = False
+                skip_next_n = len(end_delimiter)-1
+                continue
+        if inside:
+            inside_part += s[i]
+        else:
+            outside_part += s[i]
     if inside:
         result += inside_formatter(inside_part, advance_head)
     else:

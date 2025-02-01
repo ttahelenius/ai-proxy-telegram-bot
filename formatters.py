@@ -1,13 +1,14 @@
 from telebot import formatting
 
 from parsing import Formatter, format
+import re
 
 
 class PartitionFormatter(Formatter):
-    def __init__(self, begin_delimiters: list[str], end_delimiters: list[str]):
+    def __init__(self, begin_delimiter: str, end_delimiter: str):
         self.currently_inside = False
-        self.begin_delimiters = begin_delimiters
-        self.end_delimiters = end_delimiters
+        self.begin_delimiter = begin_delimiter
+        self.end_delimiter = end_delimiter
         self.reset()
 
     def reset(self):
@@ -19,8 +20,9 @@ class PartitionFormatter(Formatter):
     def out_format(self, s: str, advance_head: bool) -> str:
         return s
 
-    def format(self, str: str, advance_head: bool = False) -> str:
-        formatted, inside = format(str, self.begin_delimiters, self.end_delimiters, self.in_format, self.out_format, self.currently_inside, advance_head)
+    def format(self, s: str, advance_head: bool = False) -> str:
+        formatted, inside = format(s, self.begin_delimiter, self.end_delimiter,
+                                   self.in_format, self.out_format, self.currently_inside, advance_head)
         if advance_head:
             self.currently_inside = inside
         return formatted
@@ -28,8 +30,8 @@ class PartitionFormatter(Formatter):
 
 class ChainedPartitionFormatter(Formatter):
     class InnerFormatter(PartitionFormatter):
-        def __init__(self, begin_delimiters: list[str], end_delimiters: list[str], outer, next: Formatter):
-            super().__init__(begin_delimiters, end_delimiters)
+        def __init__(self, begin_delimiter: str, end_delimiter: str, outer, next: Formatter):
+            super().__init__(begin_delimiter, end_delimiter)
             self.next = next
             self.outer = outer
 
@@ -41,8 +43,8 @@ class ChainedPartitionFormatter(Formatter):
         def out_format(self, s: str, advance_head: bool) -> str:
             return self.next.format(self.outer.out_format(s), advance_head)
 
-    def __init__(self, next: Formatter, begin_delimiters: list[str], end_delimiters: list[str]):
-        self.inner = ChainedPartitionFormatter.InnerFormatter(begin_delimiters, end_delimiters, self, next)
+    def __init__(self, next: Formatter, begin_delimiter: str, end_delimiter: str):
+        self.inner = ChainedPartitionFormatter.InnerFormatter(begin_delimiter, end_delimiter, self, next)
         self.next = next
         self.reset()
 
@@ -99,7 +101,7 @@ base_formatter = CompoundFormatter(escape_formatter)
 
 class BoldFormatter(ChainedPartitionFormatter):
     def __init__(self):
-        super().__init__(base_formatter, ["**"], ["**"])
+        super().__init__(base_formatter, "**", "**")
 
     def in_format(self, s: str) -> str:
         return formatting.mbold(s, escape=False)
@@ -109,13 +111,10 @@ bold_formatter = BoldFormatter()
 
 class CodeFormatter(ChainedPartitionFormatter):
     def __init__(self):
-        super().__init__(bold_formatter, ["```python", "```C", "```cpp", "```c++", "```c#",
-                                          "```csharp", "```java", "```bash", "```javascript",
-                                          "```html", "```css", "```sql", "```xml", "```php",
-                                          "```json", "```ini", "```typescript" "```kotlin",
-                                          "```plaintext", "```latex", "```"], ["```"])
+        super().__init__(bold_formatter, "```", "```")
+
     def in_format(self, s: str) -> str:
-        return formatting.mcode(s, escape=False)
+        return re.sub("^(\S+\n)?(.*)$", "```\g<1>\n\g<2>\n```", s, flags=re.S)
 
     def out_format(self, s: str) -> str:
         return latex_formatter.format(s)

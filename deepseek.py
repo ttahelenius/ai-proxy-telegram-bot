@@ -9,7 +9,7 @@ import re
 class DeepSeekQuery(Query):
     class DeepSeekThinkFormatter(ChainedPartitionFormatter):
         def __init__(self):
-            super().__init__(ReplyFormatter(), ["<think>"], ["</think>"])
+            super().__init__(ReplyFormatter(), "<think>", "</think>")
             self.deepseek_thinking_first = True
 
         def reset(self):

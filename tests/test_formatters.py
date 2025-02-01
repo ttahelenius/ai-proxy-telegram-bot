@@ -6,7 +6,7 @@ import texts
 
 class SimpleFormatter(PartitionFormatter):
     def __init__(self):
-        super().__init__(["<"], [">"])
+        super().__init__("<", ">")
     def in_format(self, s: str, advance_head: bool) -> str:
         return "|" + s + "|"
     def out_format(self, s: str, advance_head: bool) -> str:
@@ -37,7 +37,7 @@ def test_chained_formatter():
     class CustomChainedPartitionFormatter(ChainedPartitionFormatter):
         def in_format(self, s: str) -> str:
             return "~" + s + "~"
-    chained_formatter = CustomChainedPartitionFormatter(formatter, ["["], ["]"])
+    chained_formatter = CustomChainedPartitionFormatter(formatter, "[", "]")
 
     assert chained_formatter.format("testing <formatting>", advance_head=True) \
                                  == "TESTING |formatting|"
@@ -55,28 +55,28 @@ def test_reply_formatter():
     reply_formatter = ReplyFormatter()
 
     assert reply_formatter.format("testing ```code``` test **bolding**") \
-                               == "testing ```\ncode``` test *bolding*"
+                               == "testing ```\ncode\n``` test *bolding*"
     
     assert reply_formatter.format("Dots. ```in . code``` and in **bold.**") \
-                               == "Dots\. ```\nin \. code``` and in *bold\.*"
+                               == "Dots\. ```\nin \. code\n``` and in *bold\.*"
     
     assert reply_formatter.format("Bolding ```...**inside...** code```") \
-                               == "Bolding ```\n\.\.\.*inside\.\.\.* code```"
+                               == "Bolding ```\n\.\.\.*inside\.\.\.* code\n```"
     
     assert reply_formatter.format("Bolding **outside ```...code``` block**") \
-                               == "Bolding *outside *```\n\.\.\.code``` block"
+                               == "Bolding *outside *```\n\.\.\.code\n``` block"
     
     assert reply_formatter.format("Alternating **bolding ```between** code``` block") \
-                               == "Alternating *bolding *```\nbetween* code*``` block"
+                               == "Alternating *bolding *```\nbetween* code*\n``` block"
     
     assert reply_formatter.format("Out ```of place` **symbols` *escaped** *inside``` both") \
-                               == "Out ```\nof place\` *symbols\` \*escaped* \*inside``` both"
+                               == "Out ```\nof place\` *symbols\` \*escaped* \*inside\n``` both"
     
 def test_deepseek_formatter():
     deepseek_formatter = DeepSeekQuery.DeepSeekThinkFormatter()
 
     assert deepseek_formatter.format("<think>thinking\na lot of\nthings\n```with code in between```\nbut still\nthinking!") \
-                     == texts.thinking + "\n>thinking\n>a lot of\n>things\n>```\n>with code in between```\n>but still\n>thinking\!"
+                     == texts.thinking + "\n>thinking\n>a lot of\n>things\n>```\n>with code in between\n>```\n>but still\n>thinking\!"
 
 def test_LaTeX_formatting():
     try:
@@ -87,7 +87,7 @@ def test_LaTeX_formatting():
         assert reply_formatter.format("LaTeX formatted fraction \\frac{2}{3}") \
                                     == "LaTeX formatted fraction 2/3"
 
-        assert reply_formatter.format("LaTeX formatted outside code \\frac{2}{3} ```plaintext but not inside \\frac{2}{3}```") \
-                                    == "LaTeX formatted outside code 2/3 ```\n but not inside \\\\frac\\{2\\}\\{3\\}```"
+        assert reply_formatter.format("LaTeX formatted outside code \\frac{2}{3} ```plaintext\nbut not inside \\frac{2}{3}```") \
+                                    == "LaTeX formatted outside code 2/3 ```plaintext\n\nbut not inside \\\\frac\\{2\\}\\{3\\}\n```"
     except ImportError as e:
         pass

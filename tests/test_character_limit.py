@@ -18,11 +18,11 @@ def test_no_spaces():
 
 def test_formatted():
     class LengtheningFormatter(Formatter):
-        def format(self, str: str, advance_head: bool = False) -> str:
-            return "E" + str
+        def format(self, s: str, advance_head: bool = False) -> str:
+            return "E" + s
     class ShorteningFormatter(Formatter):
-        def format(self, str: str, advance_head: bool = False) -> str:
-            return str[1:]
+        def format(self, s: str, advance_head: bool = False) -> str:
+            return s[1:]
     
     assert divide("a b c d e", 8) == ("a b c d", "e")
     assert divide("a b c d e", 9) == ("a b c d e", "")

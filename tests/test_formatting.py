@@ -6,7 +6,7 @@ in_format  = lambda s, advance_head: "|" + s + "|"
 out_format = lambda s, advance_head: s.upper()
 
 def format(str: str, begin_delimiter: str, end_delimiter: str, inside):
-    return parsing.format(str, [begin_delimiter], [end_delimiter], in_format, out_format, inside, False)
+    return parsing.format(str, begin_delimiter, end_delimiter, in_format, out_format, inside, False)
 
 def test_formatting_contained():
     assert format("testing <formatting>", "<", ">", inside=False) \
