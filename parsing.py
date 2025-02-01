@@ -40,8 +40,8 @@ class Formatter:
     def reset(self):
         pass
 
-    def format(self, str: str, advance_head: bool = False) -> str:
-        return str
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        return s
 
 
 def divide_to_before_and_after_character_limit(s: str, limit: int, formatter: Formatter | None = None) -> tuple[str, str]:

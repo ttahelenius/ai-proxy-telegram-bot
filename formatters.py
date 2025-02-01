@@ -20,7 +20,7 @@ class PartitionFormatter(Formatter):
     def out_format(self, s: str, advance_head: bool) -> str:
         return s
 
-    def format(self, s: str, advance_head: bool = False) -> str:
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
         formatted, inside = format(s, self.begin_delimiter, self.end_delimiter,
                                    self.in_format, self.out_format, self.currently_inside, advance_head)
         if advance_head:
@@ -30,21 +30,25 @@ class PartitionFormatter(Formatter):
 
 class ChainedPartitionFormatter(Formatter):
     class InnerFormatter(PartitionFormatter):
-        def __init__(self, begin_delimiter: str, end_delimiter: str, outer, next: Formatter):
+        def __init__(self, begin_delimiter: str, end_delimiter: str, outer, next: Formatter, inside_not_chained: bool):
             super().__init__(begin_delimiter, end_delimiter)
             self.next = next
             self.outer = outer
+            self.inside_not_chained = inside_not_chained
 
         def in_format(self, s: str, advance_head: bool) -> str:
             if s and s.strip():
-                return self.outer.in_format(self.next.format(s, advance_head))
+                if self.inside_not_chained:
+                    return self.outer.in_format(s)
+                else:
+                    return self.outer.in_format(self.next.format(s, advance_head))
             return s
 
         def out_format(self, s: str, advance_head: bool) -> str:
             return self.next.format(self.outer.out_format(s), advance_head)
 
-    def __init__(self, next: Formatter, begin_delimiter: str, end_delimiter: str):
-        self.inner = ChainedPartitionFormatter.InnerFormatter(begin_delimiter, end_delimiter, self, next)
+    def __init__(self, next: Formatter, begin_delimiter: str, end_delimiter: str, inside_not_chained: bool = False):
+        self.inner = ChainedPartitionFormatter.InnerFormatter(begin_delimiter, end_delimiter, self, next, inside_not_chained)
         self.next = next
         self.reset()
 
@@ -58,20 +62,26 @@ class ChainedPartitionFormatter(Formatter):
     def out_format(self, s: str) -> str:
         return s
 
-    def format(self, s: str, advance_head: bool = False) -> str:
-        return self.inner.format(s, advance_head)
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        return self.inner.format(s, advance_head, finalized)
 
 
 class IdentityFormatter(Formatter):
-    def format(self, s: str, advance_head: bool = False) -> str:
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
         return s
 
 
 try:
     from pylatexenc.latex2text import LatexNodes2Text # type: ignore
 
-    class LaTeXFormatter(Formatter):
-        def format(self, s: str, advance_head: bool = False) -> str:
+    class LaTeXFormatter(PartitionFormatter):
+        def __init__(self):
+            super().__init__("`", "`")
+
+        def in_format(self, s: str, advance_head: bool) -> str:
+            return "`" + s + "`"
+
+        def out_format(self, s: str, advance_head: bool) -> str:
             return LatexNodes2Text().latex_to_text(s)
 
     latex_formatter = LaTeXFormatter()
@@ -81,7 +91,7 @@ except ImportError as e:
 
 
 class EscapeFormatter(Formatter):
-    def format(self, s: str, advance_head: bool = False) -> str:
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
         return formatting.escape_markdown(s)
 
 escape_formatter = EscapeFormatter()
@@ -91,12 +101,32 @@ class CompoundFormatter(Formatter):
     def __init__(self, *formatters: Formatter):
         self.formatters = formatters
 
-    def format(self, s: str, advance_head: bool = False) -> str:
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
         for formatter in self.formatters:
-            s = formatter.format(s, advance_head)
+            s = formatter.format(s, advance_head, finalized)
         return s
 
-base_formatter = CompoundFormatter(escape_formatter)
+
+class H1Formatter(Formatter):
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        return re.sub("^\\\\# ([^#\n]+)$", "\n" + " "*8 + "__*\g<1>*__\n", s, flags=re.M|re.S)
+
+class H2Formatter(Formatter):
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        return re.sub("^\\\\#\\\\# ([^#\n]+)$", "\n" + " "*4 + "__*\g<1>*__\n", s, flags=re.M|re.S)
+
+class H3Formatter(Formatter):
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        return re.sub("^\\\\#\\\\#\\\\# ([^#\n]+)$", "\n" + " "*2 + "__\g<1>__\n", s, flags=re.M|re.S)
+
+class H4Formatter(Formatter):
+    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        return re.sub("^\\\\#\\\\#\\\\#\\\\# ([^#\n]+)$", "\n" + "__\g<1>__\n", s, flags=re.M|re.S)
+
+header_formatter = CompoundFormatter(H1Formatter(), H2Formatter(), H3Formatter(), H4Formatter())
+
+
+base_formatter = CompoundFormatter(escape_formatter, header_formatter)
 
 
 class BoldFormatter(ChainedPartitionFormatter):
@@ -111,10 +141,16 @@ bold_formatter = BoldFormatter()
 
 class CodeFormatter(ChainedPartitionFormatter):
     def __init__(self):
-        super().__init__(bold_formatter, "```", "```")
+        super().__init__(bold_formatter, "```", "```", inside_not_chained=True)
+
+    @staticmethod
+    def substitute(m: re.Match[str]) -> str:
+        language = m.group(1) or ""
+        contents = m.group(2) or ""
+        return "```" + formatting.escape_markdown(language) + "\n" + formatting.escape_markdown(contents) + "\n```"
 
     def in_format(self, s: str) -> str:
-        return re.sub("^(\S+\n)?(.*)$", "```\g<1>\n\g<2>\n```", s, flags=re.S)
+        return re.sub("^(\S+\n)?(.*)$", self.substitute, s, flags=re.S)
 
     def out_format(self, s: str) -> str:
         return latex_formatter.format(s)

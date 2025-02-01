@@ -10,6 +10,7 @@ class DeepSeekQuery(Query):
     class DeepSeekThinkFormatter(ChainedPartitionFormatter):
         def __init__(self):
             super().__init__(ReplyFormatter(), "<think>", "</think>")
+            self.finalized = False
             self.deepseek_thinking_first = True
 
         def reset(self):
@@ -21,11 +22,12 @@ class DeepSeekQuery(Query):
             if self.deepseek_thinking_first:
                 prefix = texts.thinking + "\n"
             if s and s.strip():
-                return prefix + mcite(s, escape=False)
+                return prefix + mcite(s, expandable=self.finalized, escape=False)
             return s
 
-        def format(self, s: str, advance_head: bool = False) -> str:
-            value = super().format(s, advance_head)
+        def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+            self.finalized = finalized
+            value = super().format(s, advance_head, finalized)
             if self.deepseek_thinking_first and advance_head:
                 self.deepseek_thinking_first = False
             return value
