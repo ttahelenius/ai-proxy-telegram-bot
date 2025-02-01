@@ -1,6 +1,6 @@
 from telebot import TeleBot # type: ignore
 from telebot.types import Message # type: ignore
-from telebot.formatting import escape_markdown # type: ignore
+from telebot.formatting import escape_markdown, mcite  # type: ignore
 from parsing import Formatter
 from formatters import ReplyFormatter
 from parsing import divide_to_before_and_after_character_limit
@@ -94,19 +94,24 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
         if m is None:
             return False
 
-        question = m.group(1)
+        prompt = m.group(1)
+        if msg.reply_to_message and msg.reply_to_message.text and msg.reply_to_message.from_user.id != bot.user.id:
+            prompt = mcite(msg.reply_to_message.text) + "\n" + prompt
+
         image_url = bot.get_file_url(msg.photo[-1].file_id) if msg.photo else None
         if image_url is None and msg.reply_to_message and msg.reply_to_message.sticker:
             image_url = bot.get_file_url(msg.reply_to_message.sticker.file_id)
         bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.please_wait), reply_to_message_id=msg.id)
         sent_message_ids = [bot_msg.id]
-        query.get_history(msg.chat.id).record(question, [msg.id], msg.reply_to_message.id if msg.reply_to_message else None, image_url)
-        r = requests.post(query.url, data=query.get_data(msg.chat.id, msg.id), headers=query.headers, stream=True)
+        query.get_history(msg.chat.id).record(prompt, [msg.id], msg.reply_to_message.id if msg.reply_to_message else None, image_url)
+
         total_reply = ""
         total_message = ""
         last_update_time = time()
         messages_left = int(config.get_or_default("TelegramBot", "MaxMessagesPerReply", "9999"))
         query.formatter.reset()
+
+        r = requests.post(query.url, data=query.get_data(msg.chat.id, msg.id), headers=query.headers, stream=True)
 
         it = r.iter_lines(decode_unicode=True)
         while True:
