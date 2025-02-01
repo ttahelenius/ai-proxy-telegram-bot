@@ -95,16 +95,22 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
             return False
 
         prompt = m.group(1)
-        if msg.reply_to_message and msg.reply_to_message.text and msg.reply_to_message.from_user.id != bot.user.id:
-            prompt = mcite(msg.reply_to_message.text) + "\n" + prompt
+        if msg.reply_to_message and msg.reply_to_message.any_text and msg.reply_to_message.from_user.id != bot.user.id:
+            prompt = mcite(msg.reply_to_message.any_text) + "\n" + prompt
 
         image_url = bot.get_file_url(msg.photo[-1].file_id) if msg.photo else None
+
+        if image_url is None and msg.reply_to_message and msg.reply_to_message.photo:
+            image_url = bot.get_file_url(msg.reply_to_message.photo[-1].file_id)
+
         if image_url is None and msg.reply_to_message and msg.reply_to_message.sticker:
             image_url = bot.get_file_url(msg.reply_to_message.sticker.file_id)
-        bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.please_wait), reply_to_message_id=msg.id)
-        sent_message_ids = [bot_msg.id]
+
         query.get_history(msg.chat.id).record(prompt, [msg.id], msg.reply_to_message.id if msg.reply_to_message else None, image_url)
 
+        bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.please_wait), reply_to_message_id=msg.id)
+
+        sent_message_ids = [bot_msg.id]
         total_reply = ""
         total_message = ""
         last_update_time = time()
