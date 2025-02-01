@@ -25,10 +25,10 @@ class DeepSeekQuery(Query):
                 return prefix + mcite(s, expandable=self.finalized, escape=False)
             return s
 
-        def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+        def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
             self.finalized = finalized
-            value = super().format(s, advance_head, finalized)
-            if self.deepseek_thinking_first and advance_head:
+            value = super().format(s, affect_state, finalized)
+            if self.deepseek_thinking_first and affect_state:
                 self.deepseek_thinking_first = False
             return value
 

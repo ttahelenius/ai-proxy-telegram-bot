@@ -144,7 +144,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                     return True
             else:
                 message_text = total_message + CONTINUATION_POSTFIX
-                bot.edit_message_text(query.formatter.format(message_text, advance_head=True, finalized=True), msg.chat.id, bot_msg.message_id)
+                bot.edit_message_text(query.formatter.format(message_text, affect_state=True, finalized=True), msg.chat.id, bot_msg.message_id)
                 if messages_left == 1:
                     bot.send_message(msg.chat.id, escape_markdown(texts.thats_enough), reply_to_message_id=msg.id)
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)

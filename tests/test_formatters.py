@@ -7,30 +7,30 @@ import texts
 class SimpleFormatter(PartitionFormatter):
     def __init__(self):
         super().__init__("<", ">")
-    def in_format(self, s: str, advance_head: bool) -> str:
+    def in_format(self, s: str) -> str:
         return "|" + s + "|"
-    def out_format(self, s: str, advance_head: bool) -> str:
+    def out_format(self, s: str) -> str:
         return s.upper()
 formatter = SimpleFormatter()
 
 def test_simple_formatter():
-    assert formatter.format("testing <formatting>", advance_head=True) \
+    assert formatter.format("testing <formatting>", affect_state=True) \
            == "TESTING |formatting|"
-    assert formatter.format("<formatting> test", advance_head=True) \
+    assert formatter.format("<formatting> test", affect_state=True) \
            == "|formatting| TEST"
-    assert formatter.format("String <to be formatted> contained", advance_head=True) \
+    assert formatter.format("String <to be formatted> contained", affect_state=True) \
            == "STRING |to be formatted| CONTAINED"
     
 def test_simple_formatter_advancing():
-    assert formatter.format("testing <formatting continues...", advance_head=True) \
+    assert formatter.format("testing <formatting continues...", affect_state=True) \
            == "TESTING |formatting continues...|"
-    assert formatter.format("...formatting continues> but ends here", advance_head=True) \
+    assert formatter.format("...formatting continues> but ends here", affect_state=True) \
            == "|...formatting continues| BUT ENDS HERE"
 
 def test_simple_formatter_not_advancing():
-    assert formatter.format("testing <formatting continues...", advance_head=False) \
+    assert formatter.format("testing <formatting continues...", affect_state=False) \
            == "TESTING |formatting continues...|"
-    assert formatter.format("...formatting continues> but ends here", advance_head=False) \
+    assert formatter.format("...formatting continues> but ends here", affect_state=False) \
            == "...FORMATTING CONTINUES> BUT ENDS HERE"
     
 def test_chained_formatter():
@@ -39,16 +39,16 @@ def test_chained_formatter():
             return "~" + s + "~"
     chained_formatter = CustomChainedPartitionFormatter(formatter, "[", "]")
 
-    assert chained_formatter.format("testing <formatting>", advance_head=True) \
+    assert chained_formatter.format("testing <formatting>", affect_state=True) \
            == "TESTING |formatting|"
     
-    assert chained_formatter.format("te[sting <formatting> te]st", advance_head=True) \
+    assert chained_formatter.format("te[sting <formatting> te]st", affect_state=True) \
            == "TE~STING |formatting| TE~ST"
     
-    assert chained_formatter.format("te[st]ing <for[matt]ing>", advance_head=True) \
+    assert chained_formatter.format("te[st]ing <for[matt]ing>", affect_state=True) \
            == "TE~ST~ING |for|~|matt|~|ing|"
     
-    assert chained_formatter.format("te[]sti<ng >fo[r][m]<a[t]t>i][ng t>e<st", advance_head=True) \
+    assert chained_formatter.format("te[]sti<ng >fo[r][m]<a[t]t>i][ng t>e<st", affect_state=True) \
            == "TESTI|ng |FO~R~~M~|a|~|t|~|t|I]~NG T>E|st|~"
 
 def test_reply_formatter():

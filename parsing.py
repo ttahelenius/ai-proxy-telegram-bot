@@ -1,5 +1,5 @@
 def format(s: str, begin_delimiter: str, end_delimiter: str,
-           inside_formatter, outside_formatter, currently_inside: bool, advance_head: bool) -> tuple[str, bool]:
+           inside_formatter, outside_formatter, currently_inside: bool) -> tuple[str, bool]:
     if not s or not s.strip():
         return s, currently_inside
     result = ""
@@ -13,14 +13,14 @@ def format(s: str, begin_delimiter: str, end_delimiter: str,
             continue
         if s[i:i + len(begin_delimiter)] == begin_delimiter:
             if not inside:
-                result += outside_formatter(outside_part, advance_head)
+                result += outside_formatter(outside_part)
                 outside_part = ""
                 inside = True
                 skip_next_n = len(begin_delimiter)-1
                 continue
         if s[i:i + len(end_delimiter)] == end_delimiter:
             if inside:
-                result += inside_formatter(inside_part, advance_head)
+                result += inside_formatter(inside_part)
                 inside_part = ""
                 inside = False
                 skip_next_n = len(end_delimiter)-1
@@ -30,9 +30,9 @@ def format(s: str, begin_delimiter: str, end_delimiter: str,
         else:
             outside_part += s[i]
     if inside:
-        result += inside_formatter(inside_part, advance_head)
+        result += inside_formatter(inside_part)
     else:
-        result += outside_formatter(outside_part, advance_head)
+        result += outside_formatter(outside_part)
     return result, inside
 
 
@@ -40,7 +40,7 @@ class Formatter:
     def reset(self):
         pass
 
-    def format(self, s: str, advance_head: bool = False, finalized: bool = False) -> str:
+    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
         return s
 
 

@@ -2,11 +2,11 @@ import pytest
 
 import parsing
 
-in_format  = lambda s, advance_head: "|" + s + "|"
-out_format = lambda s, advance_head: s.upper()
+in_format  = lambda s: "|" + s + "|"
+out_format = lambda s: s.upper()
 
-def format(str: str, begin_delimiter: str, end_delimiter: str, inside):
-    return parsing.format(str, begin_delimiter, end_delimiter, in_format, out_format, inside, False)
+def format(s: str, begin_delimiter: str, end_delimiter: str, inside):
+    return parsing.format(s, begin_delimiter, end_delimiter, in_format, out_format, inside)
 
 def test_formatting_contained():
     assert format("testing <formatting>", "<", ">", inside=False) \
