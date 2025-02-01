@@ -98,13 +98,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
         if msg.reply_to_message and msg.reply_to_message.any_text and msg.reply_to_message.from_user.id != bot.user.id:
             prompt = mcite(msg.reply_to_message.any_text) + "\n" + prompt
 
-        image_url = bot.get_file_url(msg.photo[-1].file_id) if msg.photo else None
-
-        if image_url is None and msg.reply_to_message and msg.reply_to_message.photo:
-            image_url = bot.get_file_url(msg.reply_to_message.photo[-1].file_id)
-
-        if image_url is None and msg.reply_to_message and msg.reply_to_message.sticker:
-            image_url = bot.get_file_url(msg.reply_to_message.sticker.file_id)
+        image_url = get_image_url(bot, msg)
 
         query.get_history(msg.chat.id).record(prompt, [msg.id], msg.reply_to_message.id if msg.reply_to_message else None, image_url)
 
@@ -132,11 +126,14 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                     total_reply += response
                 if not response.strip():
                     continue
+
             if time() - last_update_time <= MIN_SECONDS_PER_UPDATE:
                 continue
+
             if not total_message.strip():
                 bot.send_message(msg.chat.id, escape_markdown(texts.empty_reply))
                 return True
+
             limit = CHARACTER_LIMIT - len(escape_markdown(CONTINUATION_POSTFIX))
             total_message, remainder = divide_to_before_and_after_character_limit(total_message, limit, query.formatter)
             if remainder == "":
@@ -158,9 +155,23 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                 total_message = CONTINUATION_PREFIX + remainder
                 if data_ended:
                     sleep(MIN_SECONDS_PER_UPDATE)
+
             last_update_time = time()
 
     except Exception as e:
         error, _ = divide_to_before_and_after_character_limit(escape_markdown(str(e)), CHARACTER_LIMIT)
         bot.send_message(msg.chat.id, error)
         raise e
+
+
+def get_image_url(bot: TeleBot, msg: Message) -> str | None:
+    if msg.photo:
+        return bot.get_file_url(msg.photo[-1].file_id)
+
+    if msg.reply_to_message and msg.reply_to_message.photo:
+        return bot.get_file_url(msg.reply_to_message.photo[-1].file_id)
+
+    if msg.reply_to_message and msg.reply_to_message.sticker:
+        return bot.get_file_url(msg.reply_to_message.sticker.file_id)
+
+    return None
