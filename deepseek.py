@@ -24,8 +24,8 @@ class DeepSeekQuery(Query):
                 return prefix + mcite(s, escape=False)
             return s
 
-        def format(self, str: str, advance_head: bool = False) -> str:
-            value = super().format(str, advance_head)
+        def format(self, s: str, advance_head: bool = False) -> str:
+            value = super().format(s, advance_head)
             if self.deepseek_thinking_first and advance_head:
                 self.deepseek_thinking_first = False
             return value

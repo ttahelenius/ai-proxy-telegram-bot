@@ -77,3 +77,17 @@ def test_deepseek_formatter():
 
     assert deepseek_formatter.format("<think>thinking\na lot of\nthings\n```with code in between```\nbut still\nthinking!") \
                      == texts.thinking + "\n>thinking\n>a lot of\n>things\n>```\n>with code in between```\n>but still\n>thinking\!"
+
+def test_LaTeX_formatting():
+    try:
+        from pylatexenc.latex2text import LatexNodes2Text  # type: ignore
+
+        reply_formatter = ReplyFormatter()
+
+        assert reply_formatter.format("LaTeX formatted fraction \\frac{2}{3}") \
+                                    == "LaTeX formatted fraction 2/3"
+
+        assert reply_formatter.format("LaTeX formatted outside code \\frac{2}{3} ```plaintext but not inside \\frac{2}{3}```") \
+                                    == "LaTeX formatted outside code 2/3 ```\n but not inside \\\\frac\\{2\\}\\{3\\}```"
+    except ImportError as e:
+        pass
