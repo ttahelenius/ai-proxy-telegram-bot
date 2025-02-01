@@ -1,7 +1,8 @@
 from telebot import TeleBot # type: ignore
 from telebot.types import Message # type: ignore
 from telebot.formatting import escape_markdown # type: ignore
-from parsing import Formatter, ReplyFormatter
+from parsing import Formatter
+from formatters import ReplyFormatter
 from parsing import divide_to_before_and_after_character_limit
 import texts
 import config

@@ -1,6 +1,6 @@
 import pytest
 
-from parsing import CustomFormatter, ChainedFormatter, ReplyFormatter
+from formatters import CustomFormatter, ChainedFormatter, ReplyFormatter
 from deepseek import DeepSeekQuery
 import texts
 

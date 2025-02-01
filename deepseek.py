@@ -1,6 +1,6 @@
 from telebot.formatting import mcite # type: ignore
 from query import Query
-from parsing import ChainedFormatter, ReplyFormatter
+from formatters import ChainedFormatter, ReplyFormatter
 import config
 import texts
 import json
