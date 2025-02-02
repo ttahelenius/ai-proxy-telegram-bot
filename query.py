@@ -122,6 +122,8 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
 
         r = requests.post(query.url, data=query.get_data(msg.chat.id, msg.id), headers=query.headers, stream=True)
 
+        parse_error = False
+        raw = ""
         it = r.iter_lines(decode_unicode=True)
         while True:
             line = next(it, None)
@@ -129,12 +131,23 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
             if not data_ended:
                 if not line:
                     continue
-                response = query.get_response_text(line)
-                if response:
-                    total_message += response
-                    total_reply += response
-                if not response.strip():
+                if isinstance(line, str):
+                    raw += line
+                if parse_error:
                     continue
+                try:
+                    response = query.get_response_text(line)
+                    if response:
+                        total_message += response
+                        total_reply += response
+                    if not response.strip():
+                        continue
+                except Exception as e:
+                    parse_error = True
+                    continue
+
+            if data_ended and parse_error:
+                total_message = raw
 
             if time() - last_update_time <= MIN_SECONDS_PER_UPDATE:
                 continue
