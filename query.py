@@ -47,21 +47,30 @@ class Query:
             l.reverse()
             return self.history_printer(l)
 
-    def __init__(self, regex: str, url: str, model: str,
-                 formatter: Formatter = ReplyFormatter(),
+    def __init__(self, formatter: Formatter = ReplyFormatter(),
                  history_printer = lambda l: [{"role": r, "content": t} for (r, t, i) in l], # type: ignore
                  image_url_as_byte64: bool = False):
-        self.regex = regex
-        self.model = model
+        command = self.get_command()
+        self.regex = None if command is None else f"^{command} ((.+\n*.*)+)$"
+        self.url = config.get(self.get_vendor(), "Url")
+        self.model = config.get(self.get_vendor(), self.get_model())
         self.formatter = formatter
         self._history_printer = history_printer
         self.image_url_as_byte64 = image_url_as_byte64
         self._histories: dict[int, Query.History] = {}
-        self.url = url
         self.headers: dict[str, str] | None = None
 
+    def get_command(self) -> str | None:
+        raise NotImplementedError
+
+    def get_vendor(self) -> str | None:
+        raise NotImplementedError
+
+    def get_model(self) -> str | None:
+        raise NotImplementedError
+
     def is_configured(self):
-        return self.url and self.model
+        return self.regex and self.url and self.model
 
     def get_history(self, chat_id: int) -> History:
         history = self._histories.get(chat_id, None)
@@ -73,8 +82,8 @@ class Query:
     def get_data(self, chat_id: int, reply_to_id: int) -> str:
         return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id)})
 
-    def get_response_text(self, str: str) -> str:
-        return json.loads(str)["message"]["content"]
+    def get_response_text(self, s: str) -> str:
+        return json.loads(s)["message"]["content"]
 
     def transform_reply_for_history(self, reply: str) -> str:
         return reply

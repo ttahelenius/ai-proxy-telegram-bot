@@ -1,7 +1,6 @@
 from telebot.formatting import mcite # type: ignore
 from query import Query
 from formatters import ChainedPartitionFormatter, ReplyFormatter
-import config
 import texts
 import json
 import re
@@ -33,10 +32,11 @@ class DeepSeekQuery(Query):
             return value
 
     def __init__(self):
-        url = config.get("DeepSeek", "Url")
-        model = config.get("DeepSeek", "Model")
-        super().__init__("^r1 ((.+\n*.*)+)$", url, model, DeepSeekQuery.DeepSeekThinkFormatter())
+        super().__init__(DeepSeekQuery.DeepSeekThinkFormatter())
         self.think_parser = re.compile("^(?:<think>.*?</think>)?(.*)$", flags=re.S)
+
+    def get_vendor(self) -> str | None:
+        return "DeepSeek"
 
     def get_data(self, chat_id: int, reply_to_id: int) -> str:
         return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id), "stream": True})
@@ -46,3 +46,10 @@ class DeepSeekQuery(Query):
         if m is not None:
             return m.group(1)
         return reply
+
+
+class DeepSeekR1Query(DeepSeekQuery):
+    def get_command(self) -> str | None:
+        return "r1"
+    def get_model(self) -> str | None:
+        return "R1Model"

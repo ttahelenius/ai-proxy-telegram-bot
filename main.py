@@ -1,9 +1,9 @@
 from telebot import TeleBot # type: ignore
 from telebot.types import Message # type: ignore
 
+from deepseek import DeepSeekR1Query
+from openai import OpenAIGPTQuery, OpenAIO1Query
 from util import override_background_instance_temporarily
-from deepseek import DeepSeekQuery
-from openai import ChatGPTQuery
 from query import Query, handle_query
 import config
 import pathlib
@@ -16,10 +16,11 @@ if __name__ == "__main__":
 
     bot = TeleBot(config.get_or_throw("TelegramBot", "Token"), parse_mode='MarkdownV2', num_threads=1)
 
-    deepseek = DeepSeekQuery()
-    chatgpt = ChatGPTQuery()
+    r1 = DeepSeekR1Query()
+    chatgpt = OpenAIGPTQuery()
+    o1 = OpenAIO1Query()
 
-    query_implementations: list[Query] = [deepseek, chatgpt]
+    query_implementations: list[Query] = [r1, chatgpt, o1]
 
     @bot.message_handler(func=lambda m: True, content_types=["text", "photo", "sticker"])
     @bot.edited_message_handler(func=lambda m: True, content_types=["text", "photo", "sticker"])

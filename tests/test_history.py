@@ -3,8 +3,12 @@ import pytest
 from query import Query
 
 class DummyQuery(Query):
-    def __init__(self):
-        super().__init__("", "", "")
+    def get_command(self) -> str | None:
+        return None
+    def get_vendor(self) -> str | None:
+        return None
+    def get_model(self) -> str | None:
+        return None
 
 def test_history():
     query = DummyQuery()
