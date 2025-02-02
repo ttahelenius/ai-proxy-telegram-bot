@@ -1,3 +1,5 @@
+import warnings
+
 from telebot import formatting
 
 from parsing import Formatter, format
@@ -91,6 +93,7 @@ try:
 
     latex_formatter = LaTeXFormatter()
 except ImportError as e:
+    warnings.warn("LaTeX -> Unicode formatting not available", stacklevel=2)
     latex_formatter = IdentityFormatter()
 
 
