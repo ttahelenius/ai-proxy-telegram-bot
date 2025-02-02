@@ -1,4 +1,5 @@
 import atexit
+import importlib
 import os
 import pathlib
 import signal
@@ -6,6 +7,21 @@ import sys
 from time import sleep
 import warnings
 import subprocess
+from telebot.types import Message
+import config
+
+
+class ServiceRefuser:
+    def refuse(self, msg: Message):
+        return False
+
+def get_service_refuser() -> ServiceRefuser:
+    extension = config.get("Extension", "ServiceRefuser")
+    if extension is None:
+        return ServiceRefuser()
+    module = importlib.import_module(extension)
+    return module.CustomServiceRefuser()
+
 
 def override_background_instance_temporarily(main_file):
         lock = pathlib.Path(__file__).parent.absolute().as_posix() + "/running.lock"

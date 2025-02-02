@@ -1,5 +1,6 @@
 __pycache__
 tests/__pycache__
+extensions
 .vscode
 .pytest_cache
 .mypy_cache
