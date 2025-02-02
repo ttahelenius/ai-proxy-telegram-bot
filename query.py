@@ -25,7 +25,7 @@ class Query:
             for id in ids:
                 if id != ids[0]:
                     self.id_table[id] = ids[0]
-            if image_url and self.query.image_url_as_byte64:
+            if image_url and self.query.image_url_in_base64:
                 r = requests.get(image_url)
                 if r.ok:
                     img_base64 = base64.b64encode(r.content).decode('utf-8')
@@ -48,15 +48,15 @@ class Query:
             return self.history_printer(l)
 
     def __init__(self, formatter: Formatter = ReplyFormatter(),
-                 history_printer = lambda l: [{"role": r, "content": t} for (r, t, i) in l], # type: ignore
-                 image_url_as_byte64: bool = False):
+                 history_printer = lambda l: [{"role": r, "content": t} for (r, t, i) in l],  # type: ignore
+                 image_url_in_base64: bool = False):
         command = self.get_command()
         self.regex = None if command is None else f"^{command} ((.+\n*.*)+)$"
         self.url = config.get(self.get_vendor(), "Url")
         self.model = config.get(self.get_vendor(), self.get_model())
         self.formatter = formatter
         self._history_printer = history_printer
-        self.image_url_as_byte64 = image_url_as_byte64
+        self.image_url_in_base64 = image_url_in_base64
         self._histories: dict[int, Query.History] = {}
         self.headers: dict[str, str] | None = None
 
