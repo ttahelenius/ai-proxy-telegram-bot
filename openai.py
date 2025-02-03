@@ -45,9 +45,8 @@ class OpenAIQuery(Query):
             return delta["content"]
         return ""
 
-    def get_data(self, chat_id: int, reply_to_id: int) -> str:
-        return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id),
-                           "max_completion_tokens": config.get_int("OpenAI", "MaxCompletionTokens"), "stream": True})
+    def get_model_parameters(self) -> dict[str, any]:
+        return {"stream": True} | super().get_model_parameters()
 
 
 
@@ -56,6 +55,8 @@ class OpenAIGPTQuery(OpenAIQuery):
         return "gpt"
     def get_model(self) -> str | None:
         return "GPTModel"
+    def get_model_parameters(self) -> dict[str, any]:
+        return config.get_key_value_pairs(self.get_vendor(), "GPTParams") | super().get_model_parameters()
 
 
 class OpenAIO1Query(OpenAIQuery):
@@ -65,3 +66,5 @@ class OpenAIO1Query(OpenAIQuery):
         return "o1"
     def get_model(self) -> str | None:
         return "O1Model"
+    def get_model_parameters(self) -> dict[str, any]:
+        return config.get_key_value_pairs(self.get_vendor(), "O1Params") | super().get_model_parameters()

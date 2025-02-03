@@ -1,8 +1,9 @@
 from telebot.formatting import mcite # type: ignore
+
+import config
 from query import Query
 from formatters import ChainedPartitionFormatter, ReplyFormatter
 import texts
-import json
 import re
 
 class DeepSeekQuery(Query):
@@ -38,8 +39,8 @@ class DeepSeekQuery(Query):
     def get_vendor(self) -> str | None:
         return "DeepSeek"
 
-    def get_data(self, chat_id: int, reply_to_id: int) -> str:
-        return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id), "stream": True})
+    def get_model_parameters(self) -> dict[str, any]:
+        return {"stream": True} | super().get_model_parameters()
 
     def transform_reply_for_history(self, reply: str) -> str:
         m = self.think_parser.match(reply)
@@ -53,3 +54,5 @@ class DeepSeekR1Query(DeepSeekQuery):
         return "r1"
     def get_model(self) -> str | None:
         return "R1Model"
+    def get_model_parameters(self) -> dict[str, any]:
+        return config.get_key_value_pairs(self.get_vendor(), "R1Params") | super().get_model_parameters()

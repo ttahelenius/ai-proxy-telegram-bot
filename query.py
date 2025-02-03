@@ -80,7 +80,10 @@ class Query:
         return history
 
     def get_data(self, chat_id: int, reply_to_id: int) -> str:
-        return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id)})
+        return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id)} | self.get_model_parameters())
+
+    def get_model_parameters(self) -> dict[str, any]:
+        return {}
 
     def get_response_text(self, s: str) -> str:
         return json.loads(s)["message"]["content"]
