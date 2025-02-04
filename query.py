@@ -4,6 +4,7 @@ from telebot.formatting import escape_markdown, mcite  # type: ignore
 from parsing import Formatter
 from formatters import ReplyFormatter
 from parsing import divide_to_before_and_after_character_limit
+import util
 import texts
 import config
 import json
@@ -145,7 +146,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                         total_reply += response
                     if not response.strip():
                         continue
-                except Exception as e:
+                except:
                     parse_error = True
                     continue
 
@@ -166,6 +167,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                 bot.edit_message_text(query.formatter.format(message_text, finalized=data_ended), msg.chat.id, bot_msg.message_id)
                 if data_ended:
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
+                    util.log_reply(query.get_vendor(), query.get_model(), total_reply)
                     return True
             else:
                 message_text = total_message + CONTINUATION_POSTFIX
@@ -173,6 +175,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                 if messages_left == 1:
                     bot.send_message(msg.chat.id, escape_markdown(texts.thats_enough), reply_to_message_id=msg.id)
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
+                    util.log_reply(query.get_vendor(), query.get_model(), total_reply)
                     return True
                 messages_left -= 1
                 bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.to_be_continued), reply_to_message_id=msg.id)

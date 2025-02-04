@@ -61,3 +61,10 @@ def setup_logging():
         formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
+
+reply_logger = config.get("TelegramBot", "ReplyLog")
+
+def log_reply(vendor: str, model: str, reply: str):
+    if reply_logger:
+        with open(reply_logger, "a", encoding="utf-8") as f:
+            f.write(vendor + " " + model + ":\n" + reply + "\n\n\n")
