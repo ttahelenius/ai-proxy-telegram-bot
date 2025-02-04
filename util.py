@@ -1,5 +1,6 @@
 import atexit
 import importlib
+import logging
 import os
 import pathlib
 import signal
@@ -49,3 +50,14 @@ def override_background_instance_temporarily(main_file):
 
 def _restart_background_instance(main_file):
     subprocess.Popen([sys.executable, main_file], creationflags=subprocess.DETACHED_PROCESS)
+
+def setup_logging():
+    logging.basicConfig(level=logging.ERROR)
+    logger = logging.getLogger()
+    logger.addHandler(logging.StreamHandler())
+    error_log = config.get("TelegramBot", "ErrorLog")
+    if error_log:
+        file_handler = logging.FileHandler(error_log)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)

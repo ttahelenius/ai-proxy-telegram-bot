@@ -7,3 +7,4 @@ extensions
 .idea
 config.ini
 running.lock
+error_log.txt
