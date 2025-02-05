@@ -100,6 +100,7 @@ CONTINUATION_PREFIX = "...\n"
 CONTINUATION_POSTFIX = "\n..."
 
 def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
+    r = None
     try:
         if msg.any_text is None:
             return False
@@ -190,6 +191,9 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
         error, _ = divide_to_before_and_after_character_limit(escape_markdown(str(e)), CHARACTER_LIMIT)
         bot.send_message(msg.chat.id, error)
         raise e
+    finally:
+        if r:
+            r.close()
 
 
 def get_image_url(bot: TeleBot, msg: Message) -> str | None:

@@ -9,6 +9,7 @@ from util import override_background_instance_temporarily, get_service_refuser, 
 from query import Query, handle_query
 import config
 import pathlib
+import sys
 
 this_file = pathlib.Path(__file__).absolute().as_posix()
 
@@ -16,7 +17,7 @@ import logging
 
 if __name__ == "__main__":
     try:
-        override_background_instance_temporarily(this_file)
+        override_background_instance_temporarily(this_file, test_mode="--test" in sys.argv)
 
         bot = TeleBot(config.get_or_throw("TelegramBot", "Token"), parse_mode='MarkdownV2', num_threads=1)
 

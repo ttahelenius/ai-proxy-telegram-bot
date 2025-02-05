@@ -24,10 +24,10 @@ def get_service_refuser() -> ServiceRefuser:
     return module.CustomServiceRefuser()
 
 
-def override_background_instance_temporarily(main_file):
+def override_background_instance_temporarily(main_file, test_mode):
         lock = pathlib.Path(__file__).parent.absolute().as_posix() + "/running.lock"
 
-        if "--test" in sys.argv:
+        if test_mode:
             try:
                 import psutil
                 with open(lock, 'r') as f:

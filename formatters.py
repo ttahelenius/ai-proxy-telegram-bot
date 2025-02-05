@@ -158,7 +158,7 @@ class CodeFormatter(ChainedPartitionFormatter):
         return "```" + formatting.escape_markdown(language) + "\n" + formatting.escape_markdown(contents) + "\n```"
 
     def in_format(self, s: str) -> str:
-        return re.sub("^(\S+\n)?(.*)$", self.substitute, s, flags=re.S)
+        return re.sub("^([^\s.]+\n)?(.*)$", self.substitute, s, flags=re.S)
 
     def out_format(self, s: str) -> str:
         return latex_formatter.format(s)
