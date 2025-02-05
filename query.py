@@ -93,7 +93,7 @@ class Query:
         return reply
 
 # Telegram limitations:
-CHARACTER_LIMIT = 4096
+MAX_CHARACTERS_PER_MESSAGE = 4096
 MIN_SECONDS_PER_UPDATE = 3
 
 CONTINUATION_PREFIX = "...\n"
@@ -161,7 +161,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                 bot.send_message(msg.chat.id, escape_markdown(texts.empty_reply))
                 return True
 
-            limit = CHARACTER_LIMIT - len(escape_markdown(CONTINUATION_POSTFIX))
+            limit = MAX_CHARACTERS_PER_MESSAGE - len(escape_markdown(CONTINUATION_POSTFIX))
             total_message, remainder = divide_to_before_and_after_character_limit(total_message, limit, query.formatter)
             if remainder == "":
                 message_text = total_message + ("" if data_ended else CONTINUATION_POSTFIX)
@@ -188,7 +188,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
             last_update_time = time()
 
     except Exception as e:
-        error, _ = divide_to_before_and_after_character_limit(escape_markdown(str(e)), CHARACTER_LIMIT)
+        error, _ = divide_to_before_and_after_character_limit(escape_markdown(str(e)), MAX_CHARACTERS_PER_MESSAGE)
         bot.send_message(msg.chat.id, error)
         raise e
     finally:

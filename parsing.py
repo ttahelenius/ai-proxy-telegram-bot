@@ -47,8 +47,11 @@ class Formatter:
 def divide_to_before_and_after_character_limit(s: str, limit: int, formatter: Formatter | None = None) -> tuple[str, str]:
     """
     Divides the given string into two parts: one of which length is at most the given limit and the rest.
-    The string is split at the last space or line change if possible. If formatter is given, the formatted value
-    is also ensured to fit into the limit, however only the unformatted value will be returned.
+    The string is split at the last space or line change if possible. If no such characters are present or
+    if such split would result in fewer characters than half the limit, then words will be broken.
+
+    If formatter is given, the formatted value is also ensured to fit into the limit, however only the
+    unformatted value will be returned.
 
     Args:
         s (str): The string to be split.
@@ -73,6 +76,8 @@ def divide_to_before_and_after_character_limit(s: str, limit: int, formatter: Fo
         else:
             delimiter = "\n"
             i = last_line_change
+        if i < (limit + 1) // 2: # If less than half the limit, reject
+            i = -1
         if i == -1:
             delimiter = ""
             i = len(s)-1

@@ -16,6 +16,13 @@ def test_no_spaces():
     assert divide("abcd", 4) == ("abcd", "")
     assert divide("abcd", 3) == ("abc", "d")
 
+def test_would_be_less_than_half_after_split():
+    assert divide("It's pneumonoultramicroscopicsilicovolcanoconiosis", 20) \
+            == ("It's pneumonoultrami", "croscopicsilicovolcanoconiosis")
+
+    assert divide("It's pneumonoultramicroscopicsilicovolcanoconiosis", 9) \
+           == ("It's pneu", "monoultramicroscopicsilicovolcanoconiosis")
+
 def test_formatted():
     class LengtheningFormatter(Formatter):
         def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
