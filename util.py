@@ -13,7 +13,7 @@ import config
 
 
 class ServiceRefuser:
-    def refuse(self, msg: Message):
+    def refuse(self, msg: Message) -> bool:
         return False
 
 def get_service_refuser() -> ServiceRefuser:

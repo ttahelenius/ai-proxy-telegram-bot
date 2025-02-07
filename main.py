@@ -34,13 +34,18 @@ if __name__ == "__main__":
         @bot.message_handler(func=lambda m: True, content_types=["text", "photo", "sticker"])
         @bot.edited_message_handler(func=lambda m: True, content_types=["text", "photo", "sticker"])
         def handle_message(msg: Message):
-            if service_refuser.refuse(msg):
-                bot.send_message(msg.chat.id, escape_markdown(texts.service_refused), reply_to_message_id=msg.id)
+            if msg.any_text is None:
                 return
             for query in query_implementations:
                 if query.is_configured():
-                    if handle_query(bot, msg, query):
-                        return
+                    prompt = query.matches(msg.any_text)
+                    if prompt is None:
+                        continue
+                    if service_refuser.refuse(msg):
+                        bot.send_message(msg.chat.id, escape_markdown(texts.service_refused), reply_to_message_id=msg.id)
+                        continue
+                    handle_query(bot, prompt, msg, query)
+                    return
 
         bot.infinity_polling()
     except Exception as e:

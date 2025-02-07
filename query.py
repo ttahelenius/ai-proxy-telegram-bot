@@ -61,6 +61,12 @@ class Query:
         self._histories: dict[int, Query.History] = {}
         self.headers: dict[str, str] | None = None
 
+    def matches(self, message: str) -> str | None:
+        m = re.fullmatch(self.regex, message, flags=re.I)
+        if m is None:
+            return None
+        return m.group(1)
+
     def get_command(self) -> str | None:
         raise NotImplementedError
 
@@ -99,16 +105,9 @@ MIN_SECONDS_PER_UPDATE = 3
 CONTINUATION_PREFIX = "...\n"
 CONTINUATION_POSTFIX = "\n..."
 
-def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
+def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
     r = None
     try:
-        if msg.any_text is None:
-            return False
-        m = re.fullmatch(query.regex, msg.any_text, flags=re.I)
-        if m is None:
-            return False
-
-        prompt = m.group(1)
         if msg.reply_to_message and msg.reply_to_message.any_text and msg.reply_to_message.from_user.id != bot.user.id:
             prompt = mcite(msg.reply_to_message.any_text) + "\n" + prompt
 
@@ -159,7 +158,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
 
             if not total_message.strip():
                 bot.send_message(msg.chat.id, escape_markdown(texts.empty_reply))
-                return True
+                return
 
             limit = MAX_CHARACTERS_PER_MESSAGE - len(escape_markdown(CONTINUATION_POSTFIX))
             total_message, remainder = divide_to_before_and_after_character_limit(total_message, limit, query.formatter)
@@ -169,7 +168,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                 if data_ended:
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
                     util.log_reply(query.get_vendor(), query.get_model(), total_reply)
-                    return True
+                    return
             else:
                 message_text = total_message + CONTINUATION_POSTFIX
                 bot.edit_message_text(query.formatter.format(message_text, affect_state=True, finalized=True), msg.chat.id, bot_msg.message_id)
@@ -177,7 +176,7 @@ def handle_query(bot: TeleBot, msg: Message, query: Query) -> bool:
                     bot.send_message(msg.chat.id, escape_markdown(texts.thats_enough), reply_to_message_id=msg.id)
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
                     util.log_reply(query.get_vendor(), query.get_model(), total_reply)
-                    return True
+                    return
                 messages_left -= 1
                 bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.to_be_continued), reply_to_message_id=msg.id)
                 sent_message_ids.append(bot_msg.id)
