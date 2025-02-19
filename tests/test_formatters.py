@@ -71,7 +71,21 @@ def test_reply_formatter():
     
     assert reply_formatter.format("Out ```of place` **symbols` *escaped** *inside``` both") \
            == "Out ```\nof place\` \*\*symbols\` \*escaped\*\* \*inside\n``` both"
-    
+
+def test_header_formatting():
+    reply_formatter = ReplyFormatter()
+    assert reply_formatter.format("# Heading\ntext") == "\n        __*Heading*__\n\ntext"
+    assert reply_formatter.format("## Heading\ntext") == "\n    __*Heading*__\n\ntext"
+    assert reply_formatter.format("### Heading\ntext") == "\n  __Heading__\n\ntext"
+    assert reply_formatter.format("#### Heading\ntext") == "\n__Heading__\n\ntext"
+    assert reply_formatter.format("# **Heading**\ntext") == "\n        __*Heading*__\n\ntext"
+    assert reply_formatter.format("## **Heading**\ntext") == "\n    __*Heading*__\n\ntext"
+    assert reply_formatter.format("### **Heading**\ntext") == "\n  __*Heading*__\n\ntext"
+    assert reply_formatter.format("#### **Heading**\ntext") == "\n__*Heading*__\n\ntext"
+
+    assert reply_formatter.format(" # Random\nHash signs ## won't\nGet ### interpreted\nas #### headings\n") \
+            == " # Random\nHash signs ## won't\nGet ### interpreted\nas #### headings\n"
+
 def test_deepseek_formatter():
     deepseek_formatter = DeepSeekQuery.DeepSeekThinkFormatter()
 

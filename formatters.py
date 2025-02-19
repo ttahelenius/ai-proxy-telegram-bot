@@ -42,13 +42,18 @@ class ChainedPartitionFormatter(Formatter):
         def in_format(self, s: str) -> str:
             if s and s.strip():
                 if self.inside_not_chained:
-                    return self.outer.in_format(s)
+                    value = self.outer.in_format(s)
                 else:
-                    return self.outer.in_format(self.next.format(s, self.affect_state))
+                    value = self.outer.in_format(self.next.format(s, self.affect_state))
+                self.outer.previous_segment = s
+                return value
+            self.outer.previous_segment = s
             return s
 
         def out_format(self, s: str) -> str:
-            return self.next.format(self.outer.out_format(s), self.affect_state)
+            value = self.next.format(self.outer.out_format(s), self.affect_state)
+            self.outer.previous_segment = s
+            return value
 
         def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
             self.affect_state = affect_state
@@ -58,6 +63,7 @@ class ChainedPartitionFormatter(Formatter):
         self.inner = ChainedPartitionFormatter.InnerFormatter(begin_delimiter, end_delimiter, self, next, inside_not_chained)
         self.next = next
         self.reset()
+        self.previous_segment = ""
 
     def reset(self):
         self.inner.reset()
@@ -115,41 +121,54 @@ class CompoundFormatter(Formatter):
         return s
 
 
-class H1Formatter(Formatter):
-    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
-        return re.sub("^\\\\# ([^#\n]+)$", "\n" + " "*8 + "__*\g<1>*__\n", s, flags=re.M|re.S)
-
-class H2Formatter(Formatter):
-    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
-        return re.sub("^\\\\#\\\\# ([^#\n]+)$", "\n" + " "*4 + "__*\g<1>*__\n", s, flags=re.M|re.S)
-
-class H3Formatter(Formatter):
-    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
-        return re.sub("^\\\\#\\\\#\\\\# ([^#\n]+)$", "\n" + " "*2 + "__\g<1>__\n", s, flags=re.M|re.S)
-
-class H4Formatter(Formatter):
-    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
-        return re.sub("^\\\\#\\\\#\\\\#\\\\# ([^#\n]+)$", "\n" + "__\g<1>__\n", s, flags=re.M|re.S)
-
-header_formatter = CompoundFormatter(H1Formatter(), H2Formatter(), H3Formatter(), H4Formatter())
-
-
-base_formatter = CompoundFormatter(escape_formatter, header_formatter)
-
-
 class BoldFormatter(ChainedPartitionFormatter):
     def __init__(self):
-        super().__init__(base_formatter, "**", "**")
+        super().__init__(escape_formatter, "**", "**")
 
     def in_format(self, s: str) -> str:
         return formatting.mbold(s, escape=False)
 
 bold_formatter = BoldFormatter()
 
+class H1Formatter(ChainedPartitionFormatter):
+    def __init__(self):
+        super().__init__(bold_formatter, "# ", "\n")
+    def in_format(self, s: str) -> str:
+        if not self.previous_segment or self.previous_segment.endswith("\n"):
+            return "\n        __" + (s if '*' in s else "*" + s + "*") + "__\n\n"
+        return "# " + s + "\n"
+h1_formatter = H1Formatter()
+
+class H2Formatter(ChainedPartitionFormatter):
+    def __init__(self):
+        super().__init__(h1_formatter, "## ", "\n")
+    def in_format(self, s: str) -> str:
+        if not self.previous_segment or self.previous_segment.endswith("\n"):
+            return "\n    __" + (s if '*' in s else "*" + s + "*") + "__\n\n"
+        return "## " + s + "\n"
+h2_formatter = H2Formatter()
+
+class H3Formatter(ChainedPartitionFormatter):
+    def __init__(self):
+        super().__init__(h2_formatter, "### ", "\n")
+    def in_format(self, s: str) -> str:
+        if not self.previous_segment or self.previous_segment.endswith("\n"):
+            return "\n  __" + s + "__\n\n"
+        return "### " + s + "\n"
+h3_formatter = H3Formatter()
+
+class H4Formatter(ChainedPartitionFormatter):
+    def __init__(self):
+        super().__init__(h3_formatter, "#### ", "\n")
+    def in_format(self, s: str) -> str:
+        if not self.previous_segment or self.previous_segment.endswith("\n"):
+            return  "\n__" + s + "__\n\n"
+        return "#### " + s + "\n"
+h4_formatter = H4Formatter()
 
 class CodeFormatter(ChainedPartitionFormatter):
     def __init__(self):
-        super().__init__(bold_formatter, "```", "```", inside_not_chained=True)
+        super().__init__(h4_formatter, "```", "```", inside_not_chained=True)
 
     @staticmethod
     def substitute(m: re.Match[str]) -> str:
