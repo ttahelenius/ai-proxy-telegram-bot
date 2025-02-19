@@ -64,7 +64,10 @@ def setup_logging():
 
 reply_logger = config.get("TelegramBot", "ReplyLog")
 
-def log_reply(vendor: str, model: str, reply: str):
+def log_reply(vendor: str, model: str, reply: str, chat_id: int):
     if reply_logger:
+        loggable_chat_ids = config.get_int_list("TelegramBot", "ChatIDFilterForReplyLog")
+        if loggable_chat_ids is not None and chat_id not in loggable_chat_ids:
+            return
         with open(reply_logger, "a", encoding="utf-8") as f:
             f.write(vendor + " " + model + ":\n" + reply + "\n\n\n")

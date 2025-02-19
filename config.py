@@ -19,6 +19,11 @@ def get_int(category: str, variable: str) -> int | None:
         return None
     return int(_config[category][variable])
 
+def get_int_list(category: str, variable: str) -> list[int] | None:
+    if category not in _config or variable not in _config[category]:
+        return None
+    return [int(i) for i in _config[category][variable][1:-1:].split(",") if i]
+
 def get_or_default(category: str, variable: str, default: str) -> str:
     value = get(category, variable)
     if value is None:

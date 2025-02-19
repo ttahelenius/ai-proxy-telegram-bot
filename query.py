@@ -167,7 +167,7 @@ def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
                 bot.edit_message_text(query.formatter.format(message_text, finalized=data_ended), msg.chat.id, bot_msg.message_id)
                 if data_ended:
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
-                    util.log_reply(query.get_vendor(), query.get_model(), total_reply)
+                    util.log_reply(query.get_vendor(), query.get_model(), total_reply, msg.chat.id)
                     return
             else:
                 message_text = total_message + CONTINUATION_POSTFIX
@@ -175,7 +175,7 @@ def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
                 if messages_left == 1:
                     bot.send_message(msg.chat.id, escape_markdown(texts.thats_enough), reply_to_message_id=msg.id)
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
-                    util.log_reply(query.get_vendor(), query.get_model(), total_reply)
+                    util.log_reply(query.get_vendor(), query.get_model(), total_reply, msg.chat.id)
                     return
                 messages_left -= 1
                 bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.to_be_continued), reply_to_message_id=msg.id)

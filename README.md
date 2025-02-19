@@ -58,6 +58,7 @@ Token = {your-telegram-bot-token}
 MaxMessagesPerReply = 3
 ErrorLog = error_log_for_daemonized_instance.txt
 ReplyLog = reply_log_for_debugging_formatting.txt
+ChatIDFilterForReplyLog = [1234567890, -9876543210]
 
 [DeepSeek]
 Url = http://localhost:11434/api/chat
