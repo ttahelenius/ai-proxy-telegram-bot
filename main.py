@@ -4,9 +4,11 @@ from telebot.types import Message # type: ignore
 
 import texts
 from deepseek import DeepSeekR1Query
+from google import GemmaQuery
 from openai import OpenAIGPTQuery, OpenAIO1Query
+from mistralai import MistralQuery
 from util import override_background_instance_temporarily, get_service_refuser, setup_logging
-from query import Query, handle_query
+from query import handle_query
 import config
 import pathlib
 import sys
@@ -25,11 +27,7 @@ if __name__ == "__main__":
 
         service_refuser = get_service_refuser()
 
-        r1 = DeepSeekR1Query()
-        chatgpt = OpenAIGPTQuery()
-        o1 = OpenAIO1Query()
-
-        query_implementations: list[Query] = [r1, chatgpt, o1]
+        query_implementations = [DeepSeekR1Query(), OpenAIGPTQuery(), OpenAIO1Query(), MistralQuery(), GemmaQuery()]
 
         @bot.message_handler(func=lambda m: True, content_types=["text", "photo", "sticker"])
         @bot.edited_message_handler(func=lambda m: True, content_types=["text", "photo", "sticker"])

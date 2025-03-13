@@ -3,11 +3,8 @@ import config
 import json
 
 class OpenAIQuery(Query):
-    def __init__(self, image_url_in_base64: bool = True):
-        super().__init__(history_printer = self.history_printer, image_url_in_base64 = image_url_in_base64)
-        self.token = config.get("OpenAI", "Token")
-        self.headers = {"Authorization": "Bearer " + self.token,
-                        "Content-Type": "application/json"}
+    def __init__(self):
+        super().__init__(history_printer = self.history_printer, image_url_in_base64 = True)
 
     def get_vendor(self) -> str | None:
         return "OpenAI"
@@ -24,7 +21,7 @@ class OpenAIQuery(Query):
             {
                 "type": "image_url",
                 "image_url": {
-                    "url": image_url,
+                    "url": "data:image/jpeg;base64," + image_url,
                 },
             },
         ]
@@ -60,8 +57,6 @@ class OpenAIGPTQuery(OpenAIQuery):
 
 
 class OpenAIO1Query(OpenAIQuery):
-    def __init__(self):
-        super().__init__(image_url_in_base64=True)
     def get_command(self) -> str | None:
         return "o1"
     def get_model(self) -> str | None:

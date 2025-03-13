@@ -29,8 +29,7 @@ class Query:
             if image_url and self.query.image_url_in_base64:
                 r = requests.get(image_url)
                 if r.ok:
-                    img_base64 = base64.b64encode(r.content).decode('utf-8')
-                    image_url = f"data:image/jpeg;base64,{img_base64}"
+                    image_url = base64.b64encode(r.content).decode('utf-8')
             self._history[ids[0]] = self.query.transform_reply_for_history(text), image_url, reply_to_id
 
         def _normalize_id(self, id: int) -> int:
@@ -54,12 +53,13 @@ class Query:
         command = self.get_command()
         self.regex = None if command is None else f"^{command} ((.+\n*.*)+)$"
         self.url = config.get(self.get_vendor(), "Url")
+        self.token = config.get(self.get_vendor(), "Token")
         self.model = config.get(self.get_vendor(), self.get_model())
         self.formatter = formatter
         self._history_printer = history_printer
         self.image_url_in_base64 = image_url_in_base64
         self._histories: dict[int, Query.History] = {}
-        self.headers: dict[str, str] | None = None
+        self.headers = {"Content-Type": "application/json"} | ({"Authorization": "Bearer " + self.token} if self.token else {})
 
     def matches(self, message: str) -> str | None:
         m = re.fullmatch(self.regex, message, flags=re.I)
