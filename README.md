@@ -5,11 +5,14 @@ The bot relays messages to the AI and back via an easy to configure and extensib
 and attempts to format the result as best it can.
 
 Currently supported:
-* [DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1) via [Ollama](https://ollama.com/): text to text
-* [OpenAI](https://openai.com/api/)
-  * GPT: text to text, image to text
-  * OpenAI o1: text to text, image to text (backend support depends on model)
 
+* Via [OpenAI API](https://openai.com/api/):
+  * GPT: text to text, image to text
+  * o1: text to text, image to text (backend support depends on model)
+* Via [Ollama](https://ollama.com/):
+  * [Google Gemma](https://github.com/google-deepmind/gemma): text to text, image to text
+  * [Mistal](https://github.com/mistralai/): text to text
+  * [DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1): text to text
 <br />
 
 ## **Getting Started**
@@ -27,7 +30,7 @@ git clone https://github.com/ttahelenius/ai-proxy-telegram-bot.git
 
 ### **Usage**
 
-1. Obtain a [bot token](https://core.telegram.org/bots/features#creating-a-new-bot),
+1. Obtain a [Telegram bot token](https://core.telegram.org/bots/features#creating-a-new-bot),
 2. configure access to HTTP APIs of the AI systems of choice,
 3. create [config.ini](#configuration) based on these, and
 4. run:
@@ -37,9 +40,11 @@ git clone https://github.com/ttahelenius/ai-proxy-telegram-bot.git
 
 
 Once properly configured and running:
-- DeepSeek R1 responds to `r1`,
-- OpenAI GPT to `gpt`, and
-- OpenAI o1 to `o1`.
+- OpenAI GPT responds to `gpt`,
+- OpenAI o1 to `o1`,
+- Google Gemma to `gemma`,
+- Mistral to `mistral`, and
+- DeepSeek R1 to `r1`.
 
 For example one could send the following message in the presence of the bot:
 ```plaintext
@@ -60,13 +65,6 @@ ErrorLog = error_log_for_daemonized_instance.txt
 ReplyLog = reply_log_for_debugging_formatting.txt
 ChatIDFilterForReplyLog = [1234567890, -9876543210]
 
-[DeepSeek]
-Url = http://localhost:11434/api/chat
-R1Model = r1-model-alias
-R1Params =
-    r1_api_extra_param1 123
-    r1_api_extra_param2 "string"
-
 [OpenAI]
 Url = https://api.openai.com/v1/chat/completions
 Token = {your-open-ai-api-key}
@@ -77,7 +75,24 @@ GPTParams =
 O1Model = o1-model-alias
 O1Params =
     o1_api_extra_param1 123
-    o1_api_extra_param2 "string"
+
+[Google]
+Url = http://localhost:11434/api/chat
+GemmaModel = gemma-model-alias
+GemmaParams =
+    gemma_api_extra_param1 123
+
+[MistralAI]
+Url = http://localhost:11434/api/chat
+MistralModel = mistral-model-alias
+MistralParams =
+    mistral_api_extra_param1 123
+
+[DeepSeek]
+Url = http://localhost:11434/api/chat
+R1Model = r1-model-alias
+R1Params =
+    r1_api_extra_param1 123
 
 [Extension]
 ServiceRefuser = custom.python_module
