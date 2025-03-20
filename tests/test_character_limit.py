@@ -1,7 +1,7 @@
 import pytest
 
-from parsing import Formatter
-from parsing import divide_to_before_and_after_character_limit as divide
+from ..parsing import Formatter
+from ..parsing import divide_to_before_and_after_character_limit as divide
 
 def test_typical():
     assert divide("some words\nin sequence", 16) == ("some words\nin", "sequence")

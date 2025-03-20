@@ -1,4 +1,4 @@
-import config
+from . import config
 
 please_wait     = config.get_or_default("TextOverrides", "PleaseWait",     "... Please Wait ...")
 thats_enough    = config.get_or_default("TextOverrides", "ThatsEnough",    "Alright that's enough")

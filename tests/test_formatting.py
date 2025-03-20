@@ -1,6 +1,6 @@
 import pytest
 
-import parsing
+from .. import parsing
 
 in_format  = lambda s: "|" + s + "|"
 out_format = lambda s: s.upper()

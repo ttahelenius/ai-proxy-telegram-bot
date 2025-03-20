@@ -1,12 +1,12 @@
 from telebot import TeleBot # type: ignore
 from telebot.types import Message # type: ignore
 from telebot.formatting import escape_markdown, mcite  # type: ignore
-from parsing import Formatter
-from formatters import ReplyFormatter
-from parsing import divide_to_before_and_after_character_limit
-import util
-import texts
-import config
+from .parsing import Formatter
+from .formatters import ReplyFormatter
+from .parsing import divide_to_before_and_after_character_limit
+from . import util
+from . import texts
+from . import config
 import json
 import requests
 import re

@@ -1,5 +1,5 @@
-import config
-from query import Query
+from . import config
+from .query import Query
 
 class MistralAiQuery(Query):
     def get_vendor(self) -> str | None:

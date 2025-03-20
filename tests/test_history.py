@@ -1,6 +1,6 @@
 import pytest
 
-from query import Query
+from ..query import Query
 
 class DummyQuery(Query):
     def get_command(self) -> str | None:

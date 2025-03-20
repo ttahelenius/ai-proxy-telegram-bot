@@ -1,5 +1,5 @@
-import config
-from query import Query
+from . import config
+from .query import Query
 
 class GoogleQuery(Query):
     def get_vendor(self) -> str | None:

@@ -13,7 +13,9 @@ Currently supported:
   * [Google Gemma](https://github.com/google-deepmind/gemma): text to text, image to text
   * [Mistal](https://github.com/mistralai/): text to text
   * [DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1): text to text
-<br />
+
+The implementation uses [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) to
+set up the Telegram bot and help with the formatting.
 
 ## **Getting Started**
 
@@ -21,6 +23,11 @@ Currently supported:
 
 ```bash
 git clone https://github.com/ttahelenius/ai-proxy-telegram-bot.git
+```
+
+Install the dependency: [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI)
+```bash
+pip install pyTelegramBotAPI
 ```
 
 > [!NOTE]
@@ -35,7 +42,7 @@ git clone https://github.com/ttahelenius/ai-proxy-telegram-bot.git
 3. create [config.ini](#configuration) based on these, and
 4. run:
     ```bash
-    Python main.py
+    Python -m AIProxyTelegramBot.main
     ```
 
 
@@ -153,15 +160,6 @@ The features configured herein are documented in detail [here](#Features).
     `ServiceRefuser` in [util](util.py), for refusing service for arbitrary criteria.
   * Language: Each output text can be customized in `config.ini` to say whatever instead, in any language.
 * Debugging features:
-  * The program can be run with additional `--test` parameter to coordinate with a possible daemonized
-    instance: the background process will be terminated and restarted afterward so only one instance
-    is active at a time.
-
-    > :warning: This feature is only available on Windows, and if [psutil](https://github.com/giampaolo/psutil)
-      is installed.
-
-    > :information_source:
-      Such background process ought to be run without --test
   * `ErrorLog` in `config.ini`
   * `ReplyLog` in `config.ini` records each response in raw text for debugging the formatting.
   * Possible errors are sent as messages. If an error occurred during the parsing of the response,

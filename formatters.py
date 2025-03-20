@@ -2,7 +2,7 @@ import warnings
 
 from telebot import formatting
 
-from parsing import Formatter, format
+from .parsing import Formatter, format
 import re
 
 
