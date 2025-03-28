@@ -95,7 +95,7 @@ try:
             return "`" + s + "`"
 
         def out_format(self, s: str) -> str:
-            return LatexNodes2Text().latex_to_text(s)
+            return LatexNodes2Text(keep_comments=True).latex_to_text(s)
 
     latex_formatter = LaTeXFormatter()
 except ImportError as e:
