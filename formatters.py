@@ -2,7 +2,7 @@ import warnings
 
 from telebot import formatting
 
-from .parsing import Formatter, format
+from .parsing import Formatter, format, format_matches
 import re
 
 
@@ -79,6 +79,20 @@ class ChainedPartitionFormatter(Formatter):
         return self.inner.format(s, affect_state, finalized)
 
 
+class MatchPartitionFormatter(Formatter):
+    def __init__(self, pattern):
+        self.pattern = pattern
+
+    def in_format(self, s: str, match: re.Match) -> str:
+        return s
+
+    def out_format(self, s: str) -> str:
+        return s
+
+    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
+        return format_matches(s, self.pattern, self.in_format, self.out_format)
+
+
 class IdentityFormatter(Formatter):
     def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
         return s
@@ -95,7 +109,7 @@ try:
             return "`" + s + "`"
 
         def out_format(self, s: str) -> str:
-            return LatexNodes2Text(keep_comments=True).latex_to_text(s)
+            return LatexNodes2Text(keep_comments=True).latex_to_text(s.replace("&", "\&"))
 
     latex_formatter = LaTeXFormatter()
 except ImportError as e:
@@ -104,8 +118,14 @@ except ImportError as e:
 
 
 
-class EscapeFormatter(Formatter):
-    def format(self, s: str, affect_state: bool = False, finalized: bool = False) -> str:
+class EscapeFormatter(MatchPartitionFormatter):
+    def __init__(self):
+        super().__init__(r"\[([^[]+)\]\((https?://[^)]+)\)") # link
+
+    def in_format(self, s: str, match: re.Match) -> str:
+        return formatting.mlink(match.group(1), match.group(2))
+
+    def out_format(self, s: str) -> str:
         return formatting.escape_markdown(s)
 
 escape_formatter = EscapeFormatter()

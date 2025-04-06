@@ -1,3 +1,5 @@
+import re
+
 def format(s: str, begin_delimiter: str, end_delimiter: str,
            inside_formatter, outside_formatter, currently_inside: bool) -> tuple[str, bool]:
     if not s or not s.strip():
@@ -34,6 +36,17 @@ def format(s: str, begin_delimiter: str, end_delimiter: str,
     else:
         result += outside_formatter(outside_part)
     return result, inside
+
+def format_matches(s: str, pattern: str, inside_formatter, outside_formatter):
+    result = ''
+    last_end = 0
+    for match in re.finditer(pattern, s):
+        start, end = match.span()
+        result += outside_formatter(s[last_end:start])
+        result += inside_formatter(s[start:end], match)
+        last_end = end
+    result += outside_formatter(s[last_end:])
+    return result
 
 
 class Formatter:
