@@ -4,10 +4,10 @@ from telebot.formatting import escape_markdown
 from telebot.types import Message  # type: ignore
 
 from .texts import service_refused
-from .deepseek import DeepSeekR1Query
-from .google import GemmaQuery
-from .openai import OpenAIGPTQuery, OpenAIO1Query
-from .mistralai import MistralQuery
+from .query_impl.deepseek import DeepSeekR1Query
+from .query_impl.google import GemmaQuery
+from .query_impl.openai import OpenAIGPTQuery, OpenAIO1Query
+from .query_impl.mistralai import MistralQuery
 from .util import get_service_refuser
 from .query import handle_query
 

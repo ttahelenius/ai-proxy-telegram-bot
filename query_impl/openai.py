@@ -1,5 +1,5 @@
-from .query import Query
-from . import config
+from ..query import Query
+from .. import config
 import json
 
 class OpenAIQuery(Query):

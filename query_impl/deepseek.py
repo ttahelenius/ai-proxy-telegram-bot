@@ -1,9 +1,9 @@
 from telebot.formatting import mcite # type: ignore
 
-from . import config
-from .query import Query
-from .formatters import ChainedPartitionFormatter, ReplyFormatter
-from . import texts
+from .. import config
+from ..query import Query
+from ..formatters import ChainedPartitionFormatter, ReplyFormatter
+from .. import texts
 import re
 
 class DeepSeekQuery(Query):

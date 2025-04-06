@@ -1,7 +1,7 @@
 import pytest
 
 from ..formatters import PartitionFormatter, ChainedPartitionFormatter, ReplyFormatter
-from ..deepseek import DeepSeekQuery
+from ..query_impl.deepseek import DeepSeekQuery
 from .. import texts
 
 class SimpleFormatter(PartitionFormatter):
