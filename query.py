@@ -16,25 +16,29 @@ import base64
 
 class Query:
     class History:
-        def __init__(self, query, history_printer):
+        def __init__(self, query: 'Query', history_printer, chat_id: int):
             self.query = query
             self.history_printer = history_printer
             self._history = {}
             self.id_table = {}
+            self.chat_id = chat_id
+            self._register_file_caching()
+            self._load()
 
-        def record(self, text: str, ids: list[int], reply_to_id: int | None, image_url: str | None = None):
-            for id in ids:
-                if id != ids[0]:
-                    self.id_table[id] = ids[0]
+        def record(self, text: str, message_ids: list[int], reply_to_id: int | None, image_url: str | None = None):
+            for message_id in message_ids:
+                if message_id != message_ids[0]:
+                    self.id_table[message_id] = message_ids[0]
             if image_url and self.query.image_url_in_base64:
                 r = requests.get(image_url)
                 if r.ok:
                     image_url = base64.b64encode(r.content).decode('utf-8')
-            self._history[ids[0]] = self.query.transform_reply_for_history(text), image_url, reply_to_id
+            self._history[message_ids[0]] = self.query.transform_reply_for_history(text), image_url, reply_to_id
+            self._save()
 
-        def _normalize_id(self, id: int) -> int:
-            tabled = self.id_table.get(id, None)
-            return tabled if tabled is not None else id
+        def _normalize_id(self, message_id: int) -> int:
+            tabled = self.id_table.get(message_id, None)
+            return tabled if tabled is not None else message_id
 
         def get(self, reply_to_id):
             l = []
@@ -46,6 +50,37 @@ class Query:
                     role = "user" if role == "assistant" else "assistant"
             l.reverse()
             return self.history_printer(l)
+
+        @staticmethod
+        def serialize(history: 'Query.History') -> str:
+            return json.dumps(history.id_table) + '|' + json.dumps(history._history)
+
+        @staticmethod
+        def deserialize(serialized: str) -> tuple[dict[int, tuple[any]], dict[int, list[int]]]:
+            id_table, history = serialized.split('|', maxsplit=1)
+            return {int(k): tuple(v) for k, v in json.loads(history).items()}, {int(k): v for k, v in json.loads(id_table).items()}
+
+        def _unique_identifier(self) -> str:
+            return f'{self.query.__class__.__name__}_{self.chat_id}'
+
+        def _register_file_caching(self):
+            cacheable_chat_ids = config.get_int_list("TelegramBot", "ChatIDFilterForPersistentHistory")
+            if cacheable_chat_ids is not None and self.chat_id in cacheable_chat_ids:
+                filename = f'{self._unique_identifier()}.history'
+                def save():
+                    with open(filename, 'w+') as f:
+                        f.write(Query.History.serialize(self))
+                def load():
+                    try:
+                        with open(filename) as f:
+                            self._history, self.id_table = Query.History.deserialize(f.read())
+                    except FileNotFoundError:
+                        pass
+                self._save = save
+                self._load = load
+            else:
+                self._save = lambda : None
+                self._load = lambda : None
 
     def __init__(self, formatter: Formatter = ReplyFormatter(),
                  history_printer = lambda l: [{"role": r, "content": t} for (r, t, i) in l],  # type: ignore
@@ -82,7 +117,7 @@ class Query:
     def get_history(self, chat_id: int) -> History:
         history = self._histories.get(chat_id, None)
         if history is None:
-            history = Query.History(self, self._history_printer)
+            history = Query.History(self, self._history_printer, chat_id)
             self._histories[chat_id] = history
         return history
 

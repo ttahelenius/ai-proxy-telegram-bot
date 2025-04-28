@@ -71,6 +71,7 @@ MaxMessagesPerReply = 3
 ErrorLog = error_log_for_daemonized_instance.txt
 ReplyLog = reply_log_for_debugging_formatting.txt
 ChatIDFilterForReplyLog = [1234567890, -9876543210]
+ChatIDFilterForPersistentHistory = [1234567890, -9876543210]
 
 [OpenAI]
 Url = https://api.openai.com/v1/chat/completions
