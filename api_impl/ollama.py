@@ -1,13 +1,16 @@
 from telebot.formatting import mcite # type: ignore
 
-from .. import config
-from ..query import Query
+from ..query import Query, ApiImplementations
 from ..formatters import ChainedPartitionFormatter, ReplyFormatter
 from .. import texts
+import json
 import re
 
-class DeepSeekQuery(Query):
-    class DeepSeekThinkFormatter(ChainedPartitionFormatter):
+def bind(api_implementations: ApiImplementations):
+    api_implementations.bind("Ollama", "Text gen", lambda: OllamaQuery())
+
+class OllamaQuery(Query):
+    class ThinkFormatter(ChainedPartitionFormatter):
         def __init__(self):
             super().__init__(ReplyFormatter(), "<think>", "</think>")
             self.finalized = False
@@ -33,14 +36,16 @@ class DeepSeekQuery(Query):
             return value
 
     def __init__(self):
-        super().__init__(DeepSeekQuery.DeepSeekThinkFormatter())
+        super().__init__(OllamaQuery.ThinkFormatter())
         self.think_parser = re.compile("^(?:<think>.*?</think>)?(.*)$", flags=re.S)
 
-    def get_vendor(self) -> str | None:
-        return "DeepSeek"
+    def get_data(self, chat_id: int, reply_to_id: int) -> str:
+        return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id)}
+                          | {"stream": self.stream}
+                          | self.params)
 
-    def get_model_parameters(self) -> dict[str, any]:
-        return {"stream": True} | super().get_model_parameters()
+    def get_response_text(self, s: str) -> str:
+        return json.loads(s)["message"]["content"]
 
     def transform_reply_for_history(self, reply: str) -> str:
         m = self.think_parser.match(reply)
@@ -48,11 +53,11 @@ class DeepSeekQuery(Query):
             return m.group(1)
         return reply
 
+    def history_printer(self, l):
+        return [self.print_input(r, t, i) for (r, t, i) in l]
 
-class DeepSeekR1Query(DeepSeekQuery):
-    def get_command(self) -> str | None:
-        return "r1"
-    def get_model(self) -> str | None:
-        return "R1Model"
-    def get_model_parameters(self) -> dict[str, any]:
-        return config.get_key_value_pairs(self.get_vendor(), "R1Params") | super().get_model_parameters()
+    @staticmethod
+    def print_input(role, text, image):
+        if image:
+            return {"role": role, "content": text, "images": [image]}
+        return {"role": role, "content": text}

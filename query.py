@@ -1,6 +1,8 @@
 from telebot import TeleBot # type: ignore
 from telebot.types import Message # type: ignore
 from telebot.formatting import escape_markdown, mcite  # type: ignore
+
+from .config import Configuration
 from .parsing import Formatter
 from .formatters import ReplyFormatter
 from .parsing import divide_to_before_and_after_character_limit
@@ -29,7 +31,7 @@ class Query:
             for message_id in message_ids:
                 if message_id != message_ids[0]:
                     self.id_table[message_id] = message_ids[0]
-            if image_url and self.query.image_url_in_base64:
+            if image_url:
                 r = requests.get(image_url)
                 if r.ok:
                     image_url = base64.b64encode(r.content).decode('utf-8')
@@ -82,37 +84,34 @@ class Query:
                 self._save = lambda : None
                 self._load = lambda : None
 
-    def __init__(self, formatter: Formatter = ReplyFormatter(),
-                 history_printer = lambda l: [{"role": r, "content": t} for (r, t, i) in l],  # type: ignore
-                 image_url_in_base64: bool = False):
-        command = self.get_command()
-        self.regex = None if command is None else f"^{command} ((.+\n*.*)+)$"
-        self.url = config.get(self.get_vendor(), "Url")
-        self.token = config.get(self.get_vendor(), "Token")
-        self.model = config.get(self.get_vendor(), self.get_model())
+    def __init__(self, formatter: Formatter = ReplyFormatter()):
+        self.command = None
+        self.model = None
+        self.url = None
+        self.token = None
+        self.stream = False
+        self.params = None
         self.formatter = formatter
-        self._history_printer = history_printer
-        self.image_url_in_base64 = image_url_in_base64
+        self._history_printer = self.history_printer
         self._histories: dict[int, Query.History] = {}
-        self.headers = {"Content-Type": "application/json"} | ({"Authorization": "Bearer " + self.token} if self.token else {})
+
+    def history_printer(self, l):
+        raise NotImplementedError
+
+    def get_data(self, chat_id: int, reply_to_id: int) -> str:
+        raise NotImplementedError
+
+    def get_response_text(self, s: str) -> str:
+        raise NotImplementedError
 
     def matches(self, message: str) -> str | None:
-        m = re.fullmatch(self.regex, message, flags=re.I)
+        m = re.fullmatch(f"^{self.command} ((.+\n*.*)+)$", message, flags=re.I)
         if m is None:
             return None
         return m.group(1)
 
-    def get_command(self) -> str | None:
-        raise NotImplementedError
-
-    def get_vendor(self) -> str | None:
-        raise NotImplementedError
-
-    def get_model(self) -> str | None:
-        raise NotImplementedError
-
     def is_configured(self):
-        return self.regex and self.url and self.model
+        return self.command and self.url and self.model
 
     def get_history(self, chat_id: int) -> History:
         history = self._histories.get(chat_id, None)
@@ -121,17 +120,39 @@ class Query:
             self._histories[chat_id] = history
         return history
 
-    def get_data(self, chat_id: int, reply_to_id: int) -> str:
-        return json.dumps({"model": self.model, "messages": self.get_history(chat_id).get(reply_to_id)} | self.get_model_parameters())
-
-    def get_model_parameters(self) -> dict[str, any]:
-        return {}
-
-    def get_response_text(self, s: str) -> str:
-        return json.loads(s)["message"]["content"]
-
     def transform_reply_for_history(self, reply: str) -> str:
         return reply
+
+    @property
+    def headers(self):
+        return {"Content-Type": "application/json"} | ({"Authorization": f"Bearer {self.token}"} if self.token else {})
+
+    def configure(self, configuration: Configuration):
+        self.model = configuration.model
+        self.command = configuration.command
+        self.url = configuration.url
+        self.token = configuration.token
+        self.stream = configuration.stream
+        self.params = configuration.params
+
+class NoMatchingApiImplementationFound(Exception):
+    pass
+class ApiConfigurationOverlap(Exception):
+    pass
+
+class ApiImplementations:
+    def __init__(self):
+        self.configs = dict()
+
+    def bind(self, api: str, feature: str, generator):
+        if (api, feature) in self.configs:
+            raise ApiConfigurationOverlap()
+        self.configs[(api, feature)] = generator
+
+    def get(self, api: str, feature: str) -> Query:
+        if (api, feature) not in self.configs:
+            raise NoMatchingApiImplementationFound()
+        return self.configs[(api, feature)]()
 
 # Telegram limitations:
 MAX_CHARACTERS_PER_MESSAGE = 4096
@@ -159,11 +180,11 @@ def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
         messages_left = int(config.get_or_default("TelegramBot", "MaxMessagesPerReply", "9999"))
         query.formatter.reset()
 
-        r = requests.post(query.url, data=query.get_data(msg.chat.id, msg.id), headers=query.headers, stream=True)
+        r = requests.post(query.url, data=query.get_data(msg.chat.id, msg.id), headers=query.headers, stream=query.stream)
 
         parse_error = False
         raw = ""
-        it = r.iter_lines(decode_unicode=True)
+        it = r.iter_lines(decode_unicode=True) if query.stream else iter([r.text])
         while True:
             line = next(it, None)
             data_ended = line is None
@@ -202,7 +223,7 @@ def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
                 bot.edit_message_text(query.formatter.format(message_text, finalized=data_ended), msg.chat.id, bot_msg.message_id)
                 if data_ended:
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
-                    util.log_reply(query.get_vendor(), query.get_model(), total_reply, msg.chat.id)
+                    util.log_reply(query.command, query.model, total_reply, msg.chat.id)
                     return
             else:
                 message_text = total_message + CONTINUATION_POSTFIX
@@ -210,7 +231,7 @@ def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
                 if messages_left == 1:
                     bot.send_message(msg.chat.id, escape_markdown(texts.thats_enough), reply_to_message_id=msg.id)
                     query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
-                    util.log_reply(query.get_vendor(), query.get_model(), total_reply, msg.chat.id)
+                    util.log_reply(query.command, query.model, total_reply, msg.chat.id)
                     return
                 messages_left -= 1
                 bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.to_be_continued), reply_to_message_id=msg.id)

@@ -3,12 +3,8 @@ import pytest
 from ..query import Query
 
 class DummyQuery(Query):
-    def get_command(self) -> str | None:
-        return None
-    def get_vendor(self) -> str | None:
-        return None
-    def get_model(self) -> str | None:
-        return None
+    def history_printer(self, l):
+        return [{"role": r, "content": t} for (r, t, i) in l]
 
 def test_history():
     query = DummyQuery()

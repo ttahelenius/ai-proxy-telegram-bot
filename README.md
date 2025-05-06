@@ -4,15 +4,9 @@ This is a bot for [Telegram](https://telegram.org/), to be used as a proxy for v
 The bot relays messages to the AI and back via an easy to configure and extensible interface,
 and attempts to format the result as best it can.
 
-Currently supported:
-
-* Via [OpenAI API](https://openai.com/api/):
-  * GPT: text to text, image to text
-  * o1: text to text, image to text (backend support depends on model)
-* Via [Ollama](https://ollama.com/):
-  * [Google Gemma](https://github.com/google-deepmind/gemma): text to text, image to text
-  * [Mistal](https://github.com/mistralai/): text to text
-  * [DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1): text to text
+Currently supported text to text and image to text models for:
+* [OpenAI API](https://openai.com/api/)
+* [Ollama](https://ollama.com/) [local API](https://github.com/ollama/ollama?tab=readme-ov-file#rest-api)
 
 The implementation uses [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) to
 set up the Telegram bot and help with the formatting.
@@ -45,15 +39,24 @@ pip install pyTelegramBotAPI
     Python -m AIProxyTelegramBot.main
     ```
 
+<br />
 
-Once properly configured and running:
-- OpenAI GPT responds to `gpt`,
-- OpenAI o1 to `o1`,
-- Google Gemma to `gemma`,
-- Mistral to `mistral`, and
-- DeepSeek R1 to `r1`.
+### **Example**
 
-For example one could send the following message in the presence of the bot:
+With the following `config.ini`...
+```ini
+[TelegramBot]
+Token = {your-telegram-bot-token}
+
+[gpt]
+Api = OpenAI
+Feature = Text gen
+Url = https://api.openai.com/v1/chat/completions
+Token = {your-open-ai-token}
+Model = gpt-4o
+Stream = true
+```
+...one could ask in the presence of the bot:
 ```plaintext
 gpt Why is the sky blue?
 ```
@@ -73,34 +76,16 @@ ReplyLog = reply_log_for_debugging_formatting.txt
 ChatIDFilterForReplyLog = [1234567890, -9876543210]
 ChatIDFilterForPersistentHistory = [1234567890, -9876543210]
 
-[OpenAI]
-Url = https://api.openai.com/v1/chat/completions
-Token = {your-open-ai-api-key}
-GPTModel = gpt-model-alias
-GPTParams =
-    gpt_api_extra_param1 123
-    gpt_api_extra_param2 "string"
-O1Model = o1-model-alias
-O1Params =
-    o1_api_extra_param1 123
-
-[Google]
-Url = http://localhost:11434/api/chat
-GemmaModel = gemma-model-alias
-GemmaParams =
-    gemma_api_extra_param1 123
-
-[MistralAI]
-Url = http://localhost:11434/api/chat
-MistralModel = mistral-model-alias
-MistralParams =
-    mistral_api_extra_param1 123
-
-[DeepSeek]
-Url = http://localhost:11434/api/chat
-R1Model = r1-model-alias
-R1Params =
-    r1_api_extra_param1 123
+[message-prefix-ai-will-respond-to-in-telegram]
+Feature = Text gen
+Api = OpenAI|Ollama
+Url = ai-api-endpoint-url
+Model = ai-model-alias
+Token = ai-api-key
+Stream = True|False
+Params =
+    api_extra_param1 9999
+    api_extra_param2 "string"
 
 [Extension]
 ServiceRefuser = custom.python_module
@@ -118,6 +103,7 @@ PossibleOtherTextStrings = As defined in texts.py
 > [!NOTE]
 > The only required parameter is `Token` in `[TelegramBot]`.
 > Otherwise missing configurations will be ignored and their respective features deactivated.
+> Any number of AI configurations allowed, each responding to their own commands.
 > Changes in the config will activate at the next run.
 
 The features configured herein are documented in detail [here](#Features).
@@ -135,8 +121,9 @@ The features configured herein are documented in detail [here](#Features).
 * Conversation history: by replying to the bot's message (any of them), the reply as well as all
   previous replied to messages, will constitute message history that the bot will be aware of.
   > :information_source:
-    The history only exists for the lifetime of the instance: bot messages sent beforehand will be
-    ignored if replied to. Each model has its own noninterchangeable history.
+    The history only exists for the lifetime of the instance (bot messages sent beforehand will be
+    ignored if replied to), **unless** relevant `ChatIDFilterForPersistentHistory` parameter has been
+    configured. Each model has its own noninterchangeable history.
 
   > :warning: The previous messages may contribute to the token count in the AI, increasing the
     costs for premium AI services.
@@ -152,9 +139,8 @@ The features configured herein are documented in detail [here](#Features).
   (albeit the bot will function without it); LaTeX code is then interpreted as Unicode characters.
 * Extendability:
   * API details: `config.ini` allows for any API address and model, as well as an arbitrary number of additional parameters.
-  * Adding new query types: subclasses for `Query` in [query](query.py) can be implemented with customizable:
-    * query trigger by overriding `get_command`
-    * input writing by overriding `get_data` and the constructor parameter `history_printer`
+  * Adding support for a new API: subclasses for `Query` in [query](query.py) can be implemented with customizable:
+    * input writing by overriding `get_data` and `history_printer`
     * output reading by overriding `get_response_text`
     * output formatting via the constructor parameter `formatter`
   * ServiceRefuser: a `config.ini` parameter pointing to a Python file implementing the interface
@@ -163,5 +149,6 @@ The features configured herein are documented in detail [here](#Features).
 * Debugging features:
   * `ErrorLog` in `config.ini`
   * `ReplyLog` in `config.ini` records each response in raw text for debugging the formatting.
+    The parameter `ChatIDFilterForReplyLog` can be used to limit this to only certain chats.
   * Possible errors are sent as messages. If an error occurred during the parsing of the response,
     the response is sent as is.

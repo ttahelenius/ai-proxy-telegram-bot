@@ -1,7 +1,7 @@
 import pytest
 
+from ..api_impl.ollama import OllamaQuery
 from ..formatters import PartitionFormatter, ChainedPartitionFormatter, ReplyFormatter
-from ..query_impl.deepseek import DeepSeekQuery
 from .. import texts
 
 class SimpleFormatter(PartitionFormatter):
@@ -92,7 +92,7 @@ def test_link_formatting():
             == "characters like \\[ escaped outside but [links](https://example\\.com) preserved\\."
 
 def test_deepseek_formatter():
-    deepseek_formatter = DeepSeekQuery.DeepSeekThinkFormatter()
+    deepseek_formatter = OllamaQuery.ThinkFormatter()
 
     assert deepseek_formatter.format(
         "<think>thinking\na lot of\nthings\n```with code in between```\nbut still\nthinking!", finalized=False) \
