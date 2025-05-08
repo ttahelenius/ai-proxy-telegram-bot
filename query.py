@@ -63,7 +63,7 @@ class Query:
             return {int(k): tuple(v) for k, v in json.loads(history).items()}, {int(k): v for k, v in json.loads(id_table).items()}
 
         def _unique_identifier(self) -> str:
-            return f'{self.query.__class__.__name__}_{self.chat_id}'
+            return f'{self.query.__class__.__name__}_{self.query.command}_{self.chat_id}'
 
         def _register_file_caching(self):
             cacheable_chat_ids = config.get_int_list("TelegramBot", "ChatIDFilterForPersistentHistory")

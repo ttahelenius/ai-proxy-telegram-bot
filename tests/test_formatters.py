@@ -72,6 +72,15 @@ def test_reply_formatter():
     assert reply_formatter.format("Out ```of place` **symbols` *escaped** *inside``` both") \
            == "Out ```\nof place\` \*\*symbols\` \*escaped\*\* \*inside\n``` both"
 
+    assert reply_formatter.format("testing `monospace` and ```code```") \
+            == "testing `monospace` and ```\ncode\n```"
+
+    assert reply_formatter.format("`multi\nline\nbackticks\nescaped`") \
+           == "\\`multi\nline\nbackticks\nescaped\\`"
+
+    assert reply_formatter.format("**testing `monospace` in bold** and `**bold** in monospace`") \
+           == "*testing *`monospace` in bold* and *`\*\*bold\*\* in monospace`"
+
 def test_header_formatting():
     reply_formatter = ReplyFormatter()
     assert reply_formatter.format("# Heading\ntext") == "\n        __*Heading*__\n\ntext"

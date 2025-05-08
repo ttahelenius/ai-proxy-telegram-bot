@@ -186,9 +186,20 @@ class H4Formatter(ChainedPartitionFormatter):
         return "#### " + s + "\n"
 h4_formatter = H4Formatter()
 
+class MonospaceFormatter(MatchPartitionFormatter):
+    def __init__(self):
+        super().__init__(r"`([^`\n]+)`")  # link
+
+    def in_format(self, s: str, match: re.Match) -> str:
+        return f"`{formatting.escape_markdown(match.group(1))}`"
+
+    def out_format(self, s: str) -> str:
+        return h4_formatter.format(s)
+monospaceFormatter = MonospaceFormatter()
+
 class CodeFormatter(ChainedPartitionFormatter):
     def __init__(self):
-        super().__init__(h4_formatter, "```", "```", inside_not_chained=True)
+        super().__init__(monospaceFormatter, "```", "```", inside_not_chained=True)
 
     @staticmethod
     def substitute(m: re.Match[str]) -> str:

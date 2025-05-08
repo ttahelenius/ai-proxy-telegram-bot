@@ -9,7 +9,7 @@ Currently supported text to text and image to text models for:
 * [Ollama](https://ollama.com/) [local API](https://github.com/ollama/ollama?tab=readme-ov-file#rest-api)
 
 The implementation uses [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) to
-set up the Telegram bot and help with the formatting.
+set up the Telegram bot and help with the formatting, and [requests](https://github.com/psf/requests) to streamline HTTP request logic.
 
 ## **Getting Started**
 
@@ -19,9 +19,10 @@ set up the Telegram bot and help with the formatting.
 git clone https://github.com/ttahelenius/ai-proxy-telegram-bot.git
 ```
 
-Install the dependency: [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI)
+Install the dependencies: [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) and [requests](https://github.com/psf/requests)
 ```bash
 pip install pyTelegramBotAPI
+pip install requests
 ```
 
 > [!NOTE]
