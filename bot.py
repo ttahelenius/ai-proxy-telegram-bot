@@ -3,11 +3,11 @@ from telebot import ContinueHandling
 from telebot.formatting import escape_markdown
 from telebot.types import Message  # type: ignore
 
-from . import api_impl
+from . import api_impl, query_handler
 from .query import Query
 from .texts import service_refused
 from .util import get_service_refuser
-from .query import handle_query, ApiImplementations
+from .query import ApiImplementations
 from .config import read_query_implementations
 
 import importlib
@@ -31,7 +31,7 @@ def register(bot: telebot.TeleBot):
                     bot.send_message(msg.chat.id, escape_markdown(service_refused),
                                      reply_to_message_id=msg.id)
                     continue
-                handle_query(bot, prompt, msg, query)
+                query_handler.handle(bot, prompt, msg, query)
                 break
         return ContinueHandling()
 

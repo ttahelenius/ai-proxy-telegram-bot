@@ -1,3 +1,5 @@
+from enum import Enum
+
 import configparser
 import json.decoder
 import pathlib
@@ -49,12 +51,14 @@ def get_key_value_pairs(category: str, variable: str) -> dict[str, any]:
         return {}
     return {k: _decoder.decode(v) for k, v in [tuple(p.split(" ")) for p in key_value_pairs]}
 
+class Feature(Enum):
+    TEXT_GENERATION = "Text gen"
 
 class Configuration:
     def __init__(self, command: str, api: str, feature: str, model: str, url: str, token: str | None, stream: bool | None, params: dict[str, any]):
         self.command = command
         self.api = api
-        self.feature = feature
+        self.feature = Feature(feature)
         self.model = model
         self.url = url
         self.token = token

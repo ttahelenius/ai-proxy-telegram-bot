@@ -1,10 +1,11 @@
-from ..query import Query, ApiImplementations
+from ..query import ApiImplementations, TextGenQuery
+from ..config import Feature
 import json
 
 def bind(api_implementations: ApiImplementations):
-    api_implementations.bind("OpenAI", "Text gen", lambda: OpenAIQuery())
+    api_implementations.bind("OpenAI", Feature.TEXT_GENERATION, lambda: OpenAIQuery())
 
-class OpenAIQuery(Query):
+class OpenAIQuery(TextGenQuery):
     def history_printer(self, l):
         return [{"role": r, "content": self.get_content(t, i)} for (r, t, i) in l]
 

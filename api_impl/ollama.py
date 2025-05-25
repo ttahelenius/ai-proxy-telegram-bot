@@ -1,15 +1,16 @@
 from telebot.formatting import mcite # type: ignore
 
-from ..query import Query, ApiImplementations
+from ..query import ApiImplementations, TextGenQuery
 from ..formatters import ChainedPartitionFormatter, ReplyFormatter
 from .. import texts
+from ..config import Feature
 import json
 import re
 
 def bind(api_implementations: ApiImplementations):
-    api_implementations.bind("Ollama", "Text gen", lambda: OllamaQuery())
+    api_implementations.bind("Ollama", Feature.TEXT_GENERATION, lambda: OllamaQuery())
 
-class OllamaQuery(Query):
+class OllamaQuery(TextGenQuery):
     class ThinkFormatter(ChainedPartitionFormatter):
         def __init__(self):
             super().__init__(ReplyFormatter(), "<think>", "</think>")

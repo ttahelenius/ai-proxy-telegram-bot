@@ -1,8 +1,8 @@
 import pytest
 
-from ..query import Query
+from ..query import Query, TextGenQuery
 
-class DummyQuery(Query):
+class DummyQuery(TextGenQuery):
     def history_printer(self, l):
         return [{"role": r, "content": t} for (r, t, i) in l]
 

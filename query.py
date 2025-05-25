@@ -2,19 +2,16 @@ from telebot import TeleBot # type: ignore
 from telebot.types import Message # type: ignore
 from telebot.formatting import escape_markdown, mcite  # type: ignore
 
-from .config import Configuration
+from .config import Configuration, Feature
 from .parsing import Formatter
 from .formatters import ReplyFormatter
-from .parsing import divide_to_before_and_after_character_limit
-from . import util
-from . import texts
 from . import config
 import json
 import requests
 import re
-from time import time
-from time import sleep
 import base64
+from enum import auto, Flag
+
 
 class Query:
     class History:
@@ -91,6 +88,7 @@ class Query:
         self.token = None
         self.stream = False
         self.params = None
+        self.output_types = None
         self.formatter = formatter
         self._history_printer = self.history_printer
         self._histories: dict[int, Query.History] = {}
@@ -101,7 +99,7 @@ class Query:
     def get_data(self, chat_id: int, reply_to_id: int) -> str:
         raise NotImplementedError
 
-    def get_response_text(self, s: str) -> str:
+    def get_response_text(self, s: str) -> str | None:
         raise NotImplementedError
 
     def matches(self, message: str) -> str | None:
@@ -134,131 +132,40 @@ class Query:
         self.token = configuration.token
         self.stream = configuration.stream
         self.params = configuration.params
+        self.output_types = Output.from_feature(configuration.feature)
+
+
+class TextGenQuery(Query):
+    def get_response_text(self, s: str) -> str | None:
+        return None
+
+
+class Output(Flag):
+    TEXT = auto()
+
+    @staticmethod
+    def from_feature(feature: Feature) -> 'Output':
+        if feature == Feature.TEXT_GENERATION:
+            return Output.TEXT
+        raise ValueError()
+
 
 class NoMatchingApiImplementationFound(Exception):
     pass
 class ApiConfigurationOverlap(Exception):
     pass
 
+
 class ApiImplementations:
     def __init__(self):
         self.configs = dict()
 
-    def bind(self, api: str, feature: str, generator):
+    def bind(self, api: str, feature: Feature, generator):
         if (api, feature) in self.configs:
             raise ApiConfigurationOverlap()
         self.configs[(api, feature)] = generator
 
-    def get(self, api: str, feature: str) -> Query:
+    def get(self, api: str, feature: Feature) -> Query:
         if (api, feature) not in self.configs:
             raise NoMatchingApiImplementationFound()
         return self.configs[(api, feature)]()
-
-# Telegram limitations:
-MAX_CHARACTERS_PER_MESSAGE = 4096
-MIN_SECONDS_PER_UPDATE = 3
-
-CONTINUATION_PREFIX = "...\n"
-CONTINUATION_POSTFIX = "\n..."
-
-def handle_query(bot: TeleBot, prompt: str, msg: Message, query: Query):
-    r = None
-    try:
-        if msg.reply_to_message and msg.reply_to_message.any_text and msg.reply_to_message.from_user.id != bot.user.id:
-            prompt = mcite(msg.reply_to_message.any_text) + "\n" + prompt
-
-        image_url = get_image_url(bot, msg)
-
-        query.get_history(msg.chat.id).record(prompt, [msg.id], msg.reply_to_message.id if msg.reply_to_message else None, image_url)
-
-        bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.please_wait), reply_to_message_id=msg.id)
-
-        sent_message_ids = [bot_msg.id]
-        total_reply = ""
-        total_message = ""
-        last_update_time = time()
-        messages_left = int(config.get_or_default("TelegramBot", "MaxMessagesPerReply", "9999"))
-        query.formatter.reset()
-
-        r = requests.post(query.url, data=query.get_data(msg.chat.id, msg.id), headers=query.headers, stream=query.stream)
-
-        parse_error = False
-        raw = ""
-        it = r.iter_lines(decode_unicode=True) if query.stream else iter([r.text])
-        while True:
-            line = next(it, None)
-            data_ended = line is None
-            if not data_ended:
-                if not line:
-                    continue
-                if isinstance(line, str):
-                    raw += line
-                if parse_error:
-                    continue
-                try:
-                    response = query.get_response_text(line)
-                    if response:
-                        total_message += response
-                        total_reply += response
-                    if not response.strip():
-                        continue
-                except:
-                    parse_error = True
-                    continue
-
-            if data_ended and parse_error:
-                total_message = raw
-
-            if time() - last_update_time <= MIN_SECONDS_PER_UPDATE:
-                continue
-
-            if not total_message.strip():
-                bot.send_message(msg.chat.id, escape_markdown(texts.empty_reply))
-                return
-
-            limit = MAX_CHARACTERS_PER_MESSAGE - len(escape_markdown(CONTINUATION_POSTFIX))
-            total_message, remainder = divide_to_before_and_after_character_limit(total_message, limit, query.formatter)
-            if remainder == "":
-                message_text = total_message + ("" if data_ended else CONTINUATION_POSTFIX)
-                bot.edit_message_text(query.formatter.format(message_text, finalized=data_ended), msg.chat.id, bot_msg.message_id)
-                if data_ended:
-                    query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
-                    util.log_reply(query.command, query.model, total_reply, msg.chat.id)
-                    return
-            else:
-                message_text = total_message + CONTINUATION_POSTFIX
-                bot.edit_message_text(query.formatter.format(message_text, affect_state=True, finalized=True), msg.chat.id, bot_msg.message_id)
-                if messages_left == 1:
-                    bot.send_message(msg.chat.id, escape_markdown(texts.thats_enough), reply_to_message_id=msg.id)
-                    query.get_history(msg.chat.id).record(total_reply, sent_message_ids, msg.id)
-                    util.log_reply(query.command, query.model, total_reply, msg.chat.id)
-                    return
-                messages_left -= 1
-                bot_msg = bot.send_message(msg.chat.id, escape_markdown(texts.to_be_continued), reply_to_message_id=msg.id)
-                sent_message_ids.append(bot_msg.id)
-                total_message = CONTINUATION_PREFIX + remainder
-                if data_ended:
-                    sleep(MIN_SECONDS_PER_UPDATE)
-
-            last_update_time = time()
-
-    except Exception as e:
-        error, _ = divide_to_before_and_after_character_limit(escape_markdown(str(e)), MAX_CHARACTERS_PER_MESSAGE)
-        bot.send_message(msg.chat.id, error)
-        raise e
-    finally:
-        if r:
-            r.close()
-
-
-def get_image_url(bot: TeleBot, msg: Message) -> str | None:
-    if msg.photo:
-        return bot.get_file_url(msg.photo[-1].file_id)
-
-    if msg.reply_to_message and msg.reply_to_message.photo:
-        return bot.get_file_url(msg.reply_to_message.photo[-1].file_id)
-
-    if msg.reply_to_message and msg.reply_to_message.sticker:
-        return bot.get_file_url(msg.reply_to_message.sticker.file_id)
-
-    return None
