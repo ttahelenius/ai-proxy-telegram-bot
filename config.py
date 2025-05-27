@@ -53,6 +53,8 @@ def get_key_value_pairs(category: str, variable: str) -> dict[str, any]:
 
 class Feature(Enum):
     TEXT_GENERATION = "Text gen"
+    IMAGE_GENERATION = "Image gen"
+    IMAGE_EDIT = "Image edit"
 
 class Configuration:
     def __init__(self, command: str, api: str, feature: str, model: str, url: str, token: str | None, stream: bool | None, params: dict[str, any]):

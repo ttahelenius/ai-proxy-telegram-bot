@@ -58,7 +58,7 @@ class OllamaQuery(TextGenQuery):
         return [self.print_input(r, t, i) for (r, t, i) in l]
 
     @staticmethod
-    def print_input(role, text, image):
-        if image:
-            return {"role": role, "content": text, "images": [image]}
+    def print_input(role, text, images):
+        if images:
+            return {"role": role, "content": text, "images": images}
         return {"role": role, "content": text}

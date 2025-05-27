@@ -7,10 +7,8 @@ from .parsing import Formatter
 from .formatters import ReplyFormatter
 from . import config
 import json
-import requests
 import re
-import base64
-from enum import auto, Flag
+from enum import auto, Flag, Enum
 
 
 class Query:
@@ -24,15 +22,13 @@ class Query:
             self._register_file_caching()
             self._load()
 
-        def record(self, text: str, message_ids: list[int], reply_to_id: int | None, image_url: str | None = None):
+        def record(self, text: str | None, message_ids: list[int], reply_to_id: int | None, images_base64: list[str] = None):
             for message_id in message_ids:
                 if message_id != message_ids[0]:
                     self.id_table[message_id] = message_ids[0]
-            if image_url:
-                r = requests.get(image_url)
-                if r.ok:
-                    image_url = base64.b64encode(r.content).decode('utf-8')
-            self._history[message_ids[0]] = self.query.transform_reply_for_history(text), image_url, reply_to_id
+            if images_base64 is None:
+                images_base64 = []
+            self._history[message_ids[0]] = self.query.transform_reply_for_history(text), images_base64, reply_to_id
             self._save()
 
         def _normalize_id(self, message_id: int) -> int:
@@ -43,9 +39,9 @@ class Query:
             l = []
             role = "user"
             while reply_to_id is not None:
-                text, image_url, reply_to_id = self._history.get(self._normalize_id(reply_to_id), ("", None, None))
+                text, images_base64, reply_to_id = self._history.get(self._normalize_id(reply_to_id), ("", None, None))
                 if text != "":
-                    l.append((role, text, image_url))
+                    l.append((role, text, images_base64))
                     role = "user" if role == "assistant" else "assistant"
             l.reverse()
             return self.history_printer(l)
@@ -64,7 +60,7 @@ class Query:
 
         def _register_file_caching(self):
             cacheable_chat_ids = config.get_int_list("TelegramBot", "ChatIDFilterForPersistentHistory")
-            if cacheable_chat_ids is not None and self.chat_id in cacheable_chat_ids:
+            if not self.query.transient_history and cacheable_chat_ids is not None and self.chat_id in cacheable_chat_ids:
                 filename = f'{self._unique_identifier()}.history'
                 def save():
                     with open(filename, 'w+') as f:
@@ -81,7 +77,7 @@ class Query:
                 self._save = lambda : None
                 self._load = lambda : None
 
-    def __init__(self, formatter: Formatter = ReplyFormatter()):
+    def __init__(self, formatter: Formatter = ReplyFormatter(), transient_history: bool = False):
         self.command = None
         self.model = None
         self.url = None
@@ -90,16 +86,20 @@ class Query:
         self.params = None
         self.output_types = None
         self.formatter = formatter
+        self.transient_history = transient_history
         self._history_printer = self.history_printer
         self._histories: dict[int, Query.History] = {}
 
     def history_printer(self, l):
         raise NotImplementedError
 
-    def get_data(self, chat_id: int, reply_to_id: int) -> str:
+    def get_data(self, chat_id: int, reply_to_id: int) -> any:
         raise NotImplementedError
 
     def get_response_text(self, s: str) -> str | None:
+        raise NotImplementedError
+
+    def get_response_image_base64(self, s: str) -> str | None:
         raise NotImplementedError
 
     def matches(self, message: str) -> str | None:
@@ -118,12 +118,18 @@ class Query:
             self._histories[chat_id] = history
         return history
 
-    def transform_reply_for_history(self, reply: str) -> str:
+    def transform_reply_for_history(self, reply: str | None) -> str | None:
         return reply
+
+    def get_content_type(self) -> 'ContentType':
+        return ContentType.JSON
 
     @property
     def headers(self):
-        return {"Content-Type": "application/json"} | ({"Authorization": f"Bearer {self.token}"} if self.token else {})
+        h = {"Authorization": f"Bearer {self.token}"} if self.token else {}
+        if self.get_content_type() == ContentType.FORM:
+            return h
+        return {"Content-Type": self.get_content_type().value} | h
 
     def configure(self, configuration: Configuration):
         self.model = configuration.model
@@ -139,15 +145,33 @@ class TextGenQuery(Query):
     def get_response_text(self, s: str) -> str | None:
         return None
 
+class ImageGenQuery(Query):
+    def get_response_image_base64(self, s: str) -> str | None:
+        return None
+
+class ImageEditQuery(Query):
+    def get_response_image_base64(self, s: str) -> str | None:
+        return None
+
 
 class Output(Flag):
     TEXT = auto()
+    IMAGE = auto()
 
     @staticmethod
     def from_feature(feature: Feature) -> 'Output':
         if feature == Feature.TEXT_GENERATION:
             return Output.TEXT
+        if feature == Feature.IMAGE_GENERATION:
+            return Output.IMAGE
+        if feature == Feature.IMAGE_EDIT:
+            return Output.IMAGE
         raise ValueError()
+
+
+class ContentType(Enum):
+    JSON = "application/json"
+    FORM = "multipart/form-data"
 
 
 class NoMatchingApiImplementationFound(Exception):

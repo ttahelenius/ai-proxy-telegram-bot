@@ -61,5 +61,5 @@ def test_history_serialization():
     history.record("Fine, how bout u?", [16, 17, 18], 4)
     history.record("Fine ty. Waddup?", [22], 16)
 
-    assert Query.History.serialize(history) == '{"17": 16, "18": 16}|{"4": ["How r u?", null, null], "16": ["Fine, how bout u?", null, 4], "22": ["Fine ty. Waddup?", null, 16]}'
+    assert Query.History.serialize(history) == '{"17": 16, "18": 16}|{"4": ["How r u?", [], null], "16": ["Fine, how bout u?", [], 4], "22": ["Fine ty. Waddup?", [], 16]}'
     assert Query.History.deserialize(Query.History.serialize(history)) == (history._history, history.id_table)

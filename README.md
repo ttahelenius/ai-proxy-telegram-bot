@@ -4,12 +4,19 @@ This is a bot for [Telegram](https://telegram.org/), to be used as a proxy for v
 The bot relays messages to the AI and back via an easy to configure and extensible interface,
 and attempts to format the result as best it can.
 
-Currently supported text to text and image to text models for:
+Currently supported APIs and features:
 * [OpenAI API](https://openai.com/api/)
+  * Text to text (Chat completion)
+  * Image to text (Vision)
+  * Text to image (Image generation)
+  * Image with text to image (Image edit)
 * [Ollama](https://ollama.com/) [local API](https://github.com/ollama/ollama?tab=readme-ov-file#rest-api)
+  * Text to text (Chat completion)
+  * Image to text (Vision)
 
 The implementation uses [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) to
 set up the Telegram bot and help with the formatting, and [requests](https://github.com/psf/requests) to streamline HTTP request logic.
+
 
 ## **Getting Started**
 
@@ -19,10 +26,12 @@ set up the Telegram bot and help with the formatting, and [requests](https://git
 git clone https://github.com/ttahelenius/ai-proxy-telegram-bot.git
 ```
 
-Install the dependencies: [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) and [requests](https://github.com/psf/requests)
+Install the dependencies: [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI),
+[requests](https://github.com/psf/requests) and [puremagic](https://github.com/cdgriffith/puremagic)
 ```bash
 pip install pyTelegramBotAPI
 pip install requests
+pip install puremagic
 ```
 
 > [!NOTE]
@@ -117,6 +126,9 @@ The features configured herein are documented in detail [here](#Features).
   * Messages as prompts of the form described in [Usage](#Usage).
   * Photos sent with the caption as prompt (for vision models).
   * Photos or stickers replied to, with the message as prompt (for vision models).
+  > :information_source:
+    With both, replying to an image/sticker with another image with the prompt in caption one can send
+    two photos at once!
 * Replied to messages (from others than the bot itself) are sent as quotation in the prompt.
 * Streaming: On text output, the bot sends a message first and edits it as new tokens get generated.
 * Conversation history: by replying to the bot's message (any of them), the reply as well as all
@@ -142,7 +154,7 @@ The features configured herein are documented in detail [here](#Features).
   * API details: `config.ini` allows for any API address and model, as well as an arbitrary number of additional parameters.
   * Adding support for a new API: subclasses for `Query` in [query](query.py) can be implemented with customizable:
     * input writing by overriding `get_data` and `history_printer`
-    * output reading by overriding `get_response_text`
+    * output reading by overriding `get_response_text` or `get_response_image_base64`
     * output formatting via the constructor parameter `formatter`
   * ServiceRefuser: a `config.ini` parameter pointing to a Python file implementing the interface
     `ServiceRefuser` in [util](util.py), for refusing service for arbitrary criteria.
