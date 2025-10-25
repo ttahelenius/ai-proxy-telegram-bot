@@ -156,7 +156,7 @@ class H1Formatter(ChainedPartitionFormatter):
     def in_format(self, s: str) -> str:
         if not self.previous_segment or self.previous_segment.endswith("\n"):
             return "\n        __" + (s if '*' in s else "*" + s + "*") + "__\n\n"
-        return "# " + s + "\n"
+        return "\\# " + s + "\n"
 h1_formatter = H1Formatter()
 
 class H2Formatter(ChainedPartitionFormatter):
@@ -165,7 +165,7 @@ class H2Formatter(ChainedPartitionFormatter):
     def in_format(self, s: str) -> str:
         if not self.previous_segment or self.previous_segment.endswith("\n"):
             return "\n    __" + (s if '*' in s else "*" + s + "*") + "__\n\n"
-        return "## " + s + "\n"
+        return "\\#\\# " + s + "\n"
 h2_formatter = H2Formatter()
 
 class H3Formatter(ChainedPartitionFormatter):
@@ -174,7 +174,7 @@ class H3Formatter(ChainedPartitionFormatter):
     def in_format(self, s: str) -> str:
         if not self.previous_segment or self.previous_segment.endswith("\n"):
             return "\n  __" + s + "__\n\n"
-        return "### " + s + "\n"
+        return "\\#\\#\\# " + s + "\n"
 h3_formatter = H3Formatter()
 
 class H4Formatter(ChainedPartitionFormatter):
@@ -183,7 +183,7 @@ class H4Formatter(ChainedPartitionFormatter):
     def in_format(self, s: str) -> str:
         if not self.previous_segment or self.previous_segment.endswith("\n"):
             return  "\n__" + s + "__\n\n"
-        return "#### " + s + "\n"
+        return "\\#\\#\\#\\# " + s + "\n"
 h4_formatter = H4Formatter()
 
 class MonospaceFormatter(MatchPartitionFormatter):

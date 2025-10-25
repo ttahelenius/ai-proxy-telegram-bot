@@ -93,7 +93,7 @@ def test_header_formatting():
     assert reply_formatter.format("#### **Heading**\ntext") == "\n__*Heading*__\n\ntext"
 
     assert reply_formatter.format(" # Random\nHash signs ## won't\nGet ### interpreted\nas #### headings\n") \
-            == " # Random\nHash signs ## won't\nGet ### interpreted\nas #### headings\n"
+            == " \\# Random\nHash signs \\#\\# won't\nGet \\#\\#\\# interpreted\nas \\#\\#\\#\\# headings\n"
 
 def test_link_formatting():
     reply_formatter = ReplyFormatter()
