@@ -37,12 +37,12 @@ class Query:
 
         def get(self, reply_to_id):
             l = []
-            role = "user"
+            role = self.query.get_user_role()
             while reply_to_id is not None:
                 text, images_base64, reply_to_id = self._history.get(self._normalize_id(reply_to_id), ("", None, None))
                 if text != "":
                     l.append((role, text, images_base64))
-                    role = "user" if role == "assistant" else "assistant"
+                    role = self.query.get_user_role() if role == self.query.get_assistant_role() else self.query.get_assistant_role()
             l.reverse()
             return self.history_printer(l)
 
@@ -121,11 +121,19 @@ class Query:
     def transform_reply_for_history(self, reply: str | None) -> str | None:
         return reply
 
+    def get_user_role(self):
+        return "user"
+
+    def get_assistant_role(self):
+        return "assistant"
+
+    def get_url_suffix(self):
+        return ""
+
     def get_content_type(self) -> 'ContentType':
         return ContentType.JSON
 
-    @property
-    def headers(self):
+    def get_headers(self):
         h = {"Authorization": f"Bearer {self.token}"} if self.token else {}
         if self.get_content_type() == ContentType.FORM:
             return h
@@ -159,13 +167,15 @@ class Output(Flag):
     IMAGE = auto()
 
     @staticmethod
-    def from_feature(feature: Feature) -> 'Output':
+    def from_feature(feature: Feature) -> 'list[Output]':
         if feature == Feature.TEXT_GENERATION:
-            return Output.TEXT
+            return [Output.TEXT]
         if feature == Feature.IMAGE_GENERATION:
-            return Output.IMAGE
+            return [Output.IMAGE]
+        if feature == Feature.IMAGE_AND_TEXT_GENERATION:
+            return [Output.IMAGE, Output.TEXT]
         if feature == Feature.IMAGE_EDIT:
-            return Output.IMAGE
+            return [Output.IMAGE]
         raise ValueError()
 
 

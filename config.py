@@ -54,6 +54,7 @@ def get_key_value_pairs(category: str, variable: str) -> dict[str, any]:
 class Feature(Enum):
     TEXT_GENERATION = "Text gen"
     IMAGE_GENERATION = "Image gen"
+    IMAGE_AND_TEXT_GENERATION = "Image and text gen"
     IMAGE_EDIT = "Image edit"
 
 class Configuration:

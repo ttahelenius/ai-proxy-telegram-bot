@@ -7,12 +7,17 @@ and attempts to format the result as best it can.
 Currently supported APIs and features:
 * [OpenAI API](https://openai.com/api/)
   * Text to text (Chat completion)
-  * Image to text (Vision)
+  * Image(s) to text (Vision)
   * Text to image (Image generation)
-  * Image with text to image (Image edit)
+  * Image(s) with text to image (Image edit)
+* [Gemini API](https://ai.google.dev/gemini-api/)
+  * Text to text (Chat completion)
+  * Image(s) to text (Vision)
+  * Text to image and/or text (Image generation)
+  * Image(s) with text to image and/or text (Image edit)
 * [Ollama](https://ollama.com/) [local API](https://github.com/ollama/ollama?tab=readme-ov-file#rest-api)
   * Text to text (Chat completion)
-  * Image to text (Vision)
+  * Image(s) to text (Vision)
 
 The implementation uses [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) to
 set up the Telegram bot and help with the formatting, and [requests](https://github.com/psf/requests) to streamline HTTP request logic.
